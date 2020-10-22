@@ -1,0 +1,10 @@
+Python:
+https://nkoenig06.github.io/scrape-gd.html
+https://github.com/MatthewChatham/glassdoor-review-scraper
+
+R
+https://www.rpubs.com/chrisjkeeney/Glassdoor --> Manual approach which seems quite good however this gives mostly the listings
+https://mguideng.github.io/2019-02-27-scrape-glassdoor-gdscrapeR/
+https://github.com/tyluRp/glassdoor-scraper
+https://github.com/mguideng/gdscrapeR --> Has a problem with HTML format
+https://github.com/mguideng/rvest-scrape-glassdoor
