@@ -25,7 +25,6 @@ rnorm_sleep_generator <-
 
 # here we use a loop to go over the list of companies one by one and save the
 # results in the all_review tibble
-
 all_reviews <- tibble()
 
 for (i in seq_along(companies)) {
@@ -41,7 +40,13 @@ for (i in seq_along(companies)) {
 }
 
 # remove any duplicates, parse the review time
-all_reviews %>% glimpse()
+all_reviews %<>%
+  distinct() %>%
+  mutate(
+    review_time = clean_review_datetime(review_time_raw),
+    page = as.numeric(page)
+  ) %>% 
+  select(-review_time_raw)
 
 # Writing the finished part
 write_csv(all_reviews, here::here("data/Name_reviews_processed.csv"))
