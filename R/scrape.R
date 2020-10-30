@@ -10,9 +10,10 @@ suppressPackageStartupMessages({
   library(janitor)
 })
 
+
 message("Sourcing functions...")
 read_page <- function(url, page) {
-  glue("{url}_P{page}.htm") %>%
+  glue("{url}_P{page}.htm?countryRedirect=true") %>%
     read_html()
 }
 
@@ -35,43 +36,59 @@ clean_review_datetime <- function(x) {
 }
 
 get_review_title <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/h2/a')
+  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/h2/a')
   .data %>%
     html_nodes(xpath = x) %>%
     html_text() %>%
     str_remove_all(., '"')
 }
 
+
 get_employee_role <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[2]/div/span/span[1]')
+  x <-
+    glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/div[2]/div/span/span[1]')
   .data %>%
     html_nodes(xpath = x) %>%
     html_text()
 }
 
 get_employee_history <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/p')
+  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/p')
   .data %>%
     html_nodes(xpath = x) %>%
     html_text()
 }
 
+# Added by Ilia and has to be integrated
+# get_employee_location <- function(.data, review_id) {
+#   x <-
+#     glue(
+#       '//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/div[2]/div/span/span[2]/span'
+#     )
+#   .data %>%
+#     html_nodes(xpath = x) %>%
+#     html_text()
+# }
+
 get_employeer_pros <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[4]/p[2]')
+  x <-
+    glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[2]/div[1]/p[2]')
   .data %>%
     html_nodes(xpath = x) %>%
     html_text()
 }
 
 get_employeer_cons <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[5]/p[2]')
+  x <-
+    glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[2]/div[2]/p[2]')
   .data %>%
     html_nodes(xpath = x) %>%
     html_text()
 }
 
 get_overall_rating <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/span/div[1]/div/div')
+  x <-
+    glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/div[1]/span/div[1]/div/div')
   .data %>%
     html_nodes(xpath = x) %>%
     html_text() %>%
@@ -81,17 +98,25 @@ get_overall_rating <- function(.data, review_id) {
 get_sub_ratings <- function(.data, review_id) {
   out <- lapply(1:5, function(x) {
     subcategory <- .data %>%
-      html_nodes(xpath = glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/span/div[2]/ul/li[{x}]/div')) %>%
+      html_nodes(
+        xpath = glue(
+          '//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/div[1]/span/div[2]/ul/li[{x}]/div'
+        )
+      ) %>%
       html_text()
-
+    
     rating <- .data %>%
-      html_nodes(xpath = glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/span/div[2]/ul/li[{x}]/span/span/span/span')) %>%
+      html_nodes(
+        xpath = glue(
+          '//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/div[1]/span/div[2]/ul/li[{x}]/span/span/span/span'
+        )
+      ) %>%
       html_attr("title") %>%
       as.numeric()
-
+    
     tibble(subcategory = subcategory, rating = rating)
   })
-
+  
   no_sub_ratings <- sum(unlist(Map(nrow, out))) == 0
   if (no_sub_ratings) {
     tibble(
@@ -104,10 +129,8 @@ get_sub_ratings <- function(.data, review_id) {
   } else {
     out %>%
       bind_rows() %>%
-      pivot_wider(
-        names_from = subcategory,
-        values_from = rating
-      ) %>%
+      pivot_wider(names_from = subcategory,
+                  values_from = rating) %>%
       clean_names("snake")
   }
 }
@@ -116,36 +139,48 @@ scrape_reviews <- function(url, page_number) {
   message("Scraping page [", page_number, "] at [", Sys.time(), "]")
   page <- read_page(url, page_number)
   review_ids <- get_review_ids(page)
-
-  review_time <- unlist(lapply(review_ids, get_review_datetime, .data = page))
-  review_title <- unlist(lapply(review_ids, get_review_title, .data = page))
-  employee_role <- unlist(lapply(review_ids, get_employee_role, .data = page))
-  employee_history <- unlist(lapply(review_ids, get_employee_history, .data = page))
-  employeer_pros <- unlist(lapply(review_ids, get_employeer_pros, .data = page))
-  employeer_cons <- unlist(lapply(review_ids, get_employeer_cons, .data = page))
-  employeer_rating <- unlist(lapply(review_ids, get_overall_rating, .data = page))
+  
+  review_time <-
+    unlist(lapply(review_ids, get_review_datetime, .data = page))
+  review_title <-
+    unlist(lapply(review_ids, get_review_title, .data = page))
+  employee_role <-
+    unlist(lapply(review_ids, get_employee_role, .data = page))
+  employee_history <-
+    unlist(lapply(review_ids, get_employee_history, .data = page))
+  employeer_pros <-
+    unlist(lapply(review_ids, get_employeer_pros, .data = page))
+  employeer_cons <-
+    unlist(lapply(review_ids, get_employeer_cons, .data = page))
+  employeer_rating <-
+    unlist(lapply(review_ids, get_overall_rating, .data = page))
+  # employee_location <-
+    # unlist(lapply(review_ids, get_employee_location, .data = page))
   subcategories <- bind_rows(lapply(review_ids, function(x) {
     get_sub_ratings(page, x)
   }))
-
-  bind_cols(tibble(
-    review_id = review_ids,
-    review_time_raw = review_time,
-    review_title = review_title,
-    employee_role = employee_role,
-    employee_history = employee_history,
-    employeer_pros = employeer_pros,
-    employeer_cons = employeer_cons,
-    employeer_rating = employeer_rating
-  ), subcategories)
+  
+  bind_cols(
+    tibble(
+      review_id = review_ids,
+      review_time_raw = review_time,
+      review_title = review_title,
+      employee_role = employee_role,
+      employee_history = employee_history,
+      employeer_pros = employeer_pros,
+      employeer_cons = employeer_cons,
+      employeer_rating = employeer_rating,
+      # employee_location = employee_location
+    ),
+    subcategories
+  )
 }
+
 
 try_scrape_reviews <- function(url, page) {
   tryCatch({
-    scrape_reviews(
-      url = url,
-      page = page
-    )
+    scrape_reviews(url = url,
+                   page = page)
   }, error = function(e) {
     warning("Failed to parse page [", page, "]", call. = FALSE)
     NULL

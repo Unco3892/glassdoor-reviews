@@ -3,15 +3,25 @@ source("R/scrape.R")
 #> Loading libraries...
 #> Sourcing functions...
 
+
 # example urls, we'll go with Google
-tesla_url <- "https://www.glassdoor.com/Reviews/Tesla-Reviews-E43129"
+# tesla_url <- "https://www.glassdoor.com/Reviews/Tesla-Reviews-E43129"
 # apple_url <- "https://www.glassdoor.com/Reviews/Apple-Reviews-E1138"
 google_url <- "https://www.glassdoor.com/Reviews/Google-Reviews-E9079"
+
+# https://www.glassdoor.com/Reviews/Google-Reviews-E9079
+
+# The problem may be the login part
+
+# Access the original would mean that I would have to add a ?countryRedirect=true
+
+# https://www.glassdoor.com/Reviews/Google-Reviews-E9079.htm?countryRedirect=false
+
 
 # loop through n pages
 pages <- 1:5
 out <- lapply(pages, function(page) {
-  Sys.sleep(1)
+  # Sys.sleep(sample(1:10, 1))
   try_scrape_reviews(google_url, page)
 })
 
@@ -43,6 +53,7 @@ reviews %>%
     career_opportunities,
     compensation_and_benefits,
     senior_management
+    # employee_location
   ) %>% 
   glimpse()
 
