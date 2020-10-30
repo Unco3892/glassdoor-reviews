@@ -17,6 +17,14 @@ read_page <- function(url, page) {
     read_html()
 }
 
+get_company <- function(.data) {
+  x <-
+    glue('//*[@id="DivisionsDropdownComponent"]')
+  .data %>%
+    html_nodes(xpath = x) %>%
+    html_text()
+}
+
 get_review_ids <- function(.data) {
   .data %>%
     html_nodes(xpath = "//*[contains(@id, 'empReview')]") %>%
@@ -58,17 +66,6 @@ get_employee_history <- function(.data, review_id) {
     html_nodes(xpath = x) %>%
     html_text()
 }
-
-# Added by Ilia and has to be integrated
-# get_employee_location <- function(.data, review_id) {
-#   x <-
-#     glue(
-#       '//*[@id="{review_id}"]/div/div[2]/div[2]/div[1]/div[2]/div/span/span[2]/span'
-#     )
-#   .data %>%
-#     html_nodes(xpath = x) %>%
-#     html_text()
-# }
 
 get_employeer_pros <- function(.data, review_id) {
   x <-
@@ -139,7 +136,7 @@ scrape_reviews <- function(url, page_number) {
   message("Scraping page [", page_number, "] at [", Sys.time(), "]")
   page <- read_page(url, page_number)
   review_ids <- get_review_ids(page)
-  
+  company <- get_company(page)
   review_time <-
     unlist(lapply(review_ids, get_review_datetime, .data = page))
   review_title <-
@@ -155,7 +152,7 @@ scrape_reviews <- function(url, page_number) {
   employeer_rating <-
     unlist(lapply(review_ids, get_overall_rating, .data = page))
   # employee_location <-
-    # unlist(lapply(review_ids, get_employee_location, .data = page))
+  # unlist(lapply(review_ids, get_employee_location, .data = page))
   subcategories <- bind_rows(lapply(review_ids, function(x) {
     get_sub_ratings(page, x)
   }))
@@ -163,6 +160,7 @@ scrape_reviews <- function(url, page_number) {
   bind_cols(
     tibble(
       review_id = review_ids,
+      company = company,
       review_time_raw = review_time,
       review_title = review_title,
       employee_role = employee_role,

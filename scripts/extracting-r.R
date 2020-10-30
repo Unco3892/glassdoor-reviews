@@ -4,66 +4,45 @@ source("R/scrape.R")
 #> Sourcing functions...
 
 
-# example urls, we'll go with Google
-# tesla_url <- "https://www.glassdoor.com/Reviews/Tesla-Reviews-E43129"
-# apple_url <- "https://www.glassdoor.com/Reviews/Apple-Reviews-E1138"
-google_url <- "https://www.glassdoor.com/Reviews/Google-Reviews-E9079"
+# A vector with the URL of the desired companies
+companies <- c(
+  "https://www.glassdoor.com/Reviews/Deutsche-Bank-Reviews-E3150",
+  "https://www.glassdoor.com/Reviews/Wells-Fargo-Reviews-E8876",
+  "https://www.glassdoor.com/Reviews/TD-Reviews-E3767",
+  "https://www.glassdoor.com/Reviews/Credit-Suisse-Reviews-E3141",
+  "https://www.glassdoor.com/Reviews/Soci%C3%A9t%C3%A9-G%C3%A9n%C3%A9rale-Reviews-E10350"
+)
 
-# https://www.glassdoor.com/Reviews/Google-Reviews-E9079
+# define the minimum number of required reviews
+review_per_company <- 1556
 
-# The problem may be the login part
+# loop through n pages given that there are 10 reviews per page
+pages <- 1:(ceiling(review_per_company/10))
 
-# Access the original would mean that I would have to add a ?countryRedirect=true
+# create sleep generator with a mean 5 and standard deviation of 2
+rnorm_sleep_generator <-
+  abs(rnorm(review_per_company, mean = 5, sd = 2))
 
-# https://www.glassdoor.com/Reviews/Google-Reviews-E9079.htm?countryRedirect=false
+# here we use a loop to go over the list of companies one by one and save the
+# results in the all_review tibble
 
+all_reviews <- tibble()
 
-# loop through n pages
-pages <- 1:5
-out <- lapply(pages, function(page) {
-  # Sys.sleep(sample(1:10, 1))
-  try_scrape_reviews(google_url, page)
-})
-
-# with random time
-
-# filter for stuff we successfully extracted
-reviews <- bind_rows(Filter(Negate(is.null), out), .id = "page")
+for (i in seq_along(companies)) {
+  # define the function to extract URLs
+  out <- lapply(pages, function(page) {
+    Sys.sleep(rnorm_sleep_generator[pages])
+    try_scrape_reviews(companies[i], page)
+  })
+  # filter for stuff we successfully extracted
+  single_reviews <-
+    bind_rows(Filter(Negate(is.null), out), .id = "page")
+  all_reviews <- bind_rows(all_reviews, single_reviews)
+}
 
 # remove any duplicates, parse the review time
-reviews %>%
-  distinct() %>%
-  mutate(
-    review_time = clean_review_datetime(review_time_raw),
-    page = as.numeric(page)
-  ) %>% 
-  select(
-    page,
-    review_id,
-    review_time_raw,
-    review_time,
-    review_title,
-    employee_role,
-    employee_history,
-    employeer_pros,
-    employeer_cons,
-    employeer_rating,
-    work_life_balance,
-    culture_values,
-    career_opportunities,
-    compensation_and_benefits,
-    senior_management
-    # employee_location
-  ) %>% 
-  glimpse()
+all_reviews %>% glimpse()
 
+# Writing the finished part
+write_csv(all_reviews, here::here("data/Name_reviews_processed.csv"))
 
-
-x <- 10
-y <- 20
-g02 <- function() {
-  x <- 1
-  y <- 2
-  c(x, y)
-}
-g02()
