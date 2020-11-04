@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
   library(stringr)
   library(tidyr)
   library(janitor)
+  library(plyr)
 })
 
 
@@ -31,12 +32,14 @@ get_review_ids <- function(.data) {
     html_attr("id")
 }
 
-get_review_datetime <- function(.data, review_id) {
-  x <- glue('//*[@id="{review_id}"]/div/div[1]/div/time')
-  .data %>%
+get_review_datetime <-
+  failwith(default = NA, function(.data, review_id) {
+    x <- glue('//*[@id="{review_id}"]/div/div[1]/div/time')
+    .data %>%
+      ifelse()
     html_nodes(xpath = x) %>%
-    html_attr("datetime")
-}
+      html_attr("datetime")
+  }, quiet = TRUE)
 
 clean_review_datetime <- function(x) {
   x <- trimws(sub("(GMT-).*", "", x))

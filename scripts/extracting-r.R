@@ -48,6 +48,6 @@ all_reviews %<>%
   ) %>% 
   select(-review_time_raw)
 
-# Writing the finished part
-write_csv(all_reviews, here::here("data/Name_reviews_processed.csv"))
+# Writing the processed part
+write_csv(all_reviews, here::here("data/Ilia_reviews_processed.csv"))
 
