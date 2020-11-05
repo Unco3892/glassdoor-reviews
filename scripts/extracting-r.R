@@ -6,15 +6,15 @@ source("R/scrape.R")
 
 # A vector with the URL of the desired companies
 companies <- c(
-  "https://www.glassdoor.com/Reviews/Deutsche-Bank-Reviews-E3150",
-  "https://www.glassdoor.com/Reviews/Wells-Fargo-Reviews-E8876",
+  "https://www.glassdoor.com/Reviews/J-P-Morgan-Reviews-E145",
   "https://www.glassdoor.com/Reviews/TD-Reviews-E3767",
-  "https://www.glassdoor.com/Reviews/Credit-Suisse-Reviews-E3141",
-  "https://www.glassdoor.com/Reviews/Soci%C3%A9t%C3%A9-G%C3%A9n%C3%A9rale-Reviews-E10350"
+  "https://www.glassdoor.com/reviews/UBS-Reviews-E3419",
+  "https://www.glassdoor.com/Reviews/HSBC-Holdings-Reviews-E3482",
+  "https://www.glassdoor.com/Reviews/Deutsche-Bank-Reviews-E3150"
 )
 
 # define the minimum number of required reviews
-review_per_company <- 1570
+review_per_company <- 5010
 
 # loop through n pages given that there are 10 reviews per page
 pages <- 1:(ceiling(review_per_company/10))
