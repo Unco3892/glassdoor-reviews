@@ -14,7 +14,7 @@ companies <- c(
 )
 
 # define the minimum number of required reviews
-review_per_company <- 1556
+review_per_company <- 1570
 
 # loop through n pages given that there are 10 reviews per page
 pages <- 1:(ceiling(review_per_company/10))
@@ -48,6 +48,5 @@ all_reviews %<>%
   ) %>% 
   select(-review_time_raw)
 
-# Writing the processed part
-write_csv(all_reviews, here::here("data/Ilia_reviews_processed.csv"))
-
+# Writing the finished part
+write_csv(all_reviews, here::here("data/Name_reviews_processed.csv"))
