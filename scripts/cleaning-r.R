@@ -23,3 +23,23 @@ reviews.pro.dfm <- dfm(reviews.tokens.pro)
 dim(reviews.pro.dfm)
 #Romain: only 5503 differents tokens for the corpus=> reviews are short, straight, make sense
 
+#Romain: we should group tokens into sub-group by company (5 very large vector containing all tokens)
+y <- factor(docvars(reviews.tokens.pro, "handle"))
+
+review.pro.lsa <- textmodel_lsa(reviews.pro.dfm,
+              nd=3)
+
+biplot(y=review.pro.lsa$docs[,2:3],
+       x=review.pro.lsa$features[,2:3], 
+       col=c("grey","red"),
+       xlab = "Dim 2", 
+       ylab="Dim 3")
+
+
+
+
+
+
+
+
+
