@@ -8,6 +8,8 @@ suppressPackageStartupMessages({
   library(stringr)
   library(tidyr)
   library(janitor)
+  library(quanteda)
+  library(quanteda.textmodels)
 })
 
 
