@@ -1,0 +1,23 @@
+---
+title: "EDA-Ilia"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+source(here::here("scripts/setup.R"))
+```
+
+## EDA
+
+
+```{r }
+
+```
+
+## 
+
+
+```{r pressure, echo=FALSE}
+
+```
+
