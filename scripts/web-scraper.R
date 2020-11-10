@@ -1,5 +1,5 @@
 library(tidyverse)
-source("scraper/scrape.R")
+source(here::here("utilities/scrape.R"))
 #> Loading libraries...
 #> Sourcing functions...
 
