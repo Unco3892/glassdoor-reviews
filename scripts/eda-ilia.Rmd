@@ -81,16 +81,20 @@ glassdoor_tokenizer <- function (a_tibble, text_column) {
     ungroup()
   # indexing for the top 20 words
   index <- top_n(freq, 20)
+  # create a function to be used for the ggplot aesthathics
+  fix_lables <- function (a_column){
+    stri_replace_all_fixed(a_column, c("_", "s"), c(" ", ""), vectorize_all = FALSE)
+    }
   # designing a ggplot for the most frequent words
   freq_plt <- freq %>%
     filter(get(new_col) %in% (index %>% pull(get(new_col)))) %>%
     ggplot(aes(x = get(new_col), y = n)) + geom_col() + coord_flip() + facet_grid(~ company) + theme_light() +
     labs(title = paste0(
       "Most frequent ",
-      stri_replace_all_fixed(new_col, c("_", "s"), c(" ", ""), vectorize_all = FALSE),
+      fix_lables(new_col),
       "s per bank"
     ),
-    x = new_col)
+    x = fix_lables(new_col))
   output <-
     list(
       "Removing_stopwords" = review_token,
