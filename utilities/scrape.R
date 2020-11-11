@@ -67,7 +67,7 @@ get_employee_history <- function(.data, review_id) {
     html_text()
 }
 
-get_employeer_pros <- function(.data, review_id) {
+get_employer_pros <- function(.data, review_id) {
   x <-
     glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[2]/div[1]/p[2]')
   .data %>%
@@ -75,7 +75,7 @@ get_employeer_pros <- function(.data, review_id) {
     html_text()
 }
 
-get_employeer_cons <- function(.data, review_id) {
+get_employer_cons <- function(.data, review_id) {
   x <-
     glue('//*[@id="{review_id}"]/div/div[2]/div[2]/div[2]/div[2]/p[2]')
   .data %>%
@@ -145,11 +145,11 @@ scrape_reviews <- function(url, page_number) {
     unlist(lapply(review_ids, get_employee_role, .data = page))
   employee_history <-
     unlist(lapply(review_ids, get_employee_history, .data = page))
-  employeer_pros <-
-    unlist(lapply(review_ids, get_employeer_pros, .data = page))
-  employeer_cons <-
-    unlist(lapply(review_ids, get_employeer_cons, .data = page))
-  employeer_rating <-
+  employer_pros <-
+    unlist(lapply(review_ids, get_employer_pros, .data = page))
+  employer_cons <-
+    unlist(lapply(review_ids, get_employer_cons, .data = page))
+  employer_rating <-
     unlist(lapply(review_ids, get_overall_rating, .data = page))
   # employee_location <-
   # unlist(lapply(review_ids, get_employee_location, .data = page))
@@ -165,9 +165,9 @@ scrape_reviews <- function(url, page_number) {
       review_title = review_title,
       employee_role = employee_role,
       employee_history = employee_history,
-      employeer_pros = employeer_pros,
-      employeer_cons = employeer_cons,
-      employeer_rating = employeer_rating,
+      employer_pros = employer_pros,
+      employer_cons = employer_cons,
+      employer_rating = employer_rating,
       # employee_location = employee_location
     ),
     subcategories

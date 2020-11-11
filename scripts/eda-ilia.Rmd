@@ -4,20 +4,119 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+# Loading packages and knitr options
 source(here::here("scripts/setup.R"))
+
+# Importing the data
+bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
+```
+
+## Definitions
+
+Corpus = All reviews on GlassDoor for five major banks
+Text = Reviews for each bank
+Tokens = Words in each review
+
+### Data structure
+
+```{r }
+bank_reviews %>% glimpse
+```
+
+The dataset consists of `r length(unique(bank_reviews$company))` banks which are `r unique(bank_reviews$company) %>% paste(.,collapse = ", ")`.
+
+We can summarize the information for each bank.
+
+NOTE TO ilia: Replace the function below with an across as summarize_if is deprecated.
+
+```{r}
+# General overview
+bank_reviews %>%
+  select(company, employer_rating:senior_management) %>%
+  group_by(company) %>%
+  add_count() %>%
+  summarize_if(is.numeric,
+               c(
+                 "mean" = function(x)
+                   mean(x, na.rm = TRUE),
+                 "median" = function(x)
+                   median(x, na.rm = TRUE)
+               )) %>%
+  relocate(company, n_median) %>%
+  rename("number of reviews" = n_median) %>%
+  kable_maker()
+
+# An alternative shorter approach
+bank_reviews %>% 
+  dplyr::count(company, name = "number of reviews") %>% 
+  kable_maker()
 ```
 
 ## EDA
 
+Making the tokenization based on the words.
 
-```{r }
+```{r}
+# creating function to take out the pros and cons of the reviews
+glassdoor_tokenizer <- function (a_tibble, text_column) {
+  # creating the new column name
+  new_col <- paste0(quo_name(enquo(text_column)), "_word")
+  # tokenization of the reviews
+  review_token <- tidytext::unnest_tokens(
+    a_tibble,
+    output = "word",
+    input = {{text_column}},
+    to_lower = TRUE,
+    strip_punct = TRUE,
+    strip_numeric = TRUE
+  ) %>%
+    # removing the stop words
+    anti_join(., stop_words, by = "word") %>%
+    rename(., !!(new_col) := "word")
+  # looking at the most frequent words
+  freq <- review_token %>%
+    # grouping is also possible also with review_id but this has not been done
+    group_by(company) %>%
+    count("{{text_column}}_word" := get(new_col), sort = TRUE) %>%
+    ungroup()
+  # indexing for the top 20 words
+  index <- top_n(freq, 20)
+  # designing a ggplot for the most frequent words
+  freq_plt <- freq %>%
+    filter(get(new_col) %in% (index %>% pull(get(new_col)))) %>%
+    ggplot(aes(x = get(new_col), y = n)) + geom_col() + coord_flip() + facet_grid(~ company) + theme_light() +
+    labs(title = paste0(
+      "Most frequent ",
+      stri_replace_all_fixed(new_col, c("_", "s"), c(" ", ""), vectorize_all = FALSE),
+      "s per bank"
+    ),
+    x = new_col)
+  output <-
+    list(
+      "Removing_stopwords" = review_token,
+      "Most_frequent_words" = freq,
+      "Plotting_most_frequent_words" = freq_plt
+    )
+  return (output)
+}
 
+pros <- glassdoor_tokenizer(bank_reviews, employer_pros)
+cons <- glassdoor_tokenizer(bank_reviews, employer_cons)
 ```
+
+<!-- See on average how many words each review contains -->
+
+Using the `quanteda` library.
+
+```{r}
+dummy <- bank_reviews$employer_pros %>% corpus()
+```
+
 
 ## 
 
 
-```{r pressure, echo=FALSE}
+```{r}
 
 ```
 

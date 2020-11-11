@@ -17,12 +17,15 @@ packages <- c(
   "patchwork",
   "maps",
   "scales",
+  "magrittr",
+  "stringi",
   # for plotting
   "knitr",
   "kableExtra",
   # for the report
   "bookdown",
-  "rmarkdown"
+  "rmarkdown",
+  "tidytext"
 )
 
 purrr::walk(packages, library, character.only = TRUE)
@@ -65,8 +68,16 @@ kable_maker <- function(a_tibble, ...) {
   a_tibble %>%
     kable(longtable = TRUE, align = 'l', ...) %>%
     kable_styling(bootstrap_options = c("striped", "hover")) %>%
-    `if`(nrow(a_tibble) > 5, (.) %>% scroll_box(height = "220px"), .)
+    `if`((nrow(a_tibble) > 5 | ncol(a_tibble) > 5), (.) %>% scroll_box(height = "220px"), .)
 }
+
+# The original code
+# kable_maker <- function(a_tibble, ...) {
+#   a_tibble %>%
+#     kable(longtable = TRUE, align = 'l', ...) %>%
+#     kable_styling(bootstrap_options = c("striped", "hover")) %>%
+#     `if`(nrow(a_tibble) > 5, (.) %>% scroll_box(height = "220px"), .)
+# }
 
 # using the kable_maker to display the first 5 rows for exercise 3
 kable_head <- function(a_tibble) {
