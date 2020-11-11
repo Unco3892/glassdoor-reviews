@@ -104,68 +104,94 @@ reviews.bank.pro.freq %>%
   labs(title="Whole dataset top 15 token frequency by bank")
 ```
 
+### Keyness analysis for each bank compared to the other
 ```{r}
-company<-docnames(reviews.bank.pro.dfm)
+company <- docnames(reviews.bank.pro.dfm)
 res <- numeric(length = length(company))
 
 for (i in 1:length(company)) {
-text2.kn <- textstat_keyness(reviews.bank.pro.dfm, target=i)
-print(textplot_keyness(text2.kn))
+  text2.kn <- textstat_keyness(reviews.bank.pro.dfm, target = i)
+  print(textplot_keyness(text2.kn))
 }
-
-
 ```
 
 
 ### Compare the reviews in terms of lexical diversity
 ```{r}
-textstat_lexdiv(reviews.bank.pro.dfm, measure = "I") %>% 
-  ggplot(aes(x=reorder(document, I), y=I))+geom_point()+coord_flip()+
-  xlab("Text") + ylab("Yule's index")
+textstat_lexdiv(reviews.bank.pro.dfm,
+                measure = "I") %>%
+  ggplot(aes(x = reorder(document, I), y = I)) +
+  geom_point() +
+  coord_flip() +
+  xlab("Text") +
+  ylab("Yule's index")
 ```
 
-### Analysis
-
+### Analysis of the differents types of score
 ```{r}
 reviews.complete %>%
   group_by(company) %>%
-  summarise(employer_rating = mean(employer_rating),
-       work_life_balance=mean(work_life_balance,na.rm = TRUE),
-       culture_values=mean(culture_values,na.rm = TRUE),
-      career_opportunities=mean(career_opportunities,na.rm = TRUE),
-       compensation_and_benefits=mean(compensation_and_benefits,na.rm = TRUE),
-       senior_management=mean(senior_management,na.rm = TRUE),
-      overall_score=mean(employer_rating,
-work_life_balance,
-culture_values,
-career_opportunities,
-compensation_and_benefits,
-senior_management)) %>%kable_maker()
+  summarise(
+    employer_rating = mean(employer_rating),
+    work_life_balance = mean(work_life_balance, na.rm = TRUE),
+    culture_values = mean(culture_values, na.rm = TRUE),
+    career_opportunities = mean(career_opportunities, na.rm = TRUE),
+    compensation_and_benefits = mean(compensation_and_benefits, na.rm = TRUE),
+    senior_management = mean(senior_management, na.rm = TRUE),
+    overall_score = mean(
+      employer_rating,
+      work_life_balance,
+      culture_values,
+      career_opportunities,
+      compensation_and_benefits,
+      senior_management
+    )
+  ) %>% kable_maker()
 ```
 
 ### Job analysis
 Here my goal is to see if jobs positions are really different from one company to another
 ```{r}
 #cleaning of the variable
-reviews.complete <- separate(data = reviews.complete, col = employee_role, into = c(NA, "employee_role"), sep = "\\-")
+reviews.complete <-
+  separate(
+    data = reviews.complete,
+    col = employee_role,
+    into = c(NA, "employee_role"),
+    sep = "\\-"
+  )
 
 jobs.corpus <- corpus(x = reviews.complete,
-                             text_field = c("employee_role"))
+                      text_field = c("employee_role"))
 
-jobs.tokens <- tokens(jobs.corpus, 
-                        remove_punct = TRUE, 
-                        remove_symbols = TRUE, 
-                        what="word")
+jobs.tokens <- tokens(
+  jobs.corpus,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  what = "word"
+)
 
-jobs.dfm<- dfm(jobs.tokens)
+jobs.dfm <- dfm(jobs.tokens)
+jobs.company <- reviews.complete$company
+jobs.dfm$company <- jobs.company
+jobs.dfm <- dfm_group(jobs.dfm, groups = "company")
 
-jobs.company <-reviews.complete$company
-jobs.dfm$company <-jobs.company
-jobs.dfm<-dfm_group(jobs.dfm,groups = "company")
+#analysis of most frequent job positions
+jobs.df<-convert(jobs.dfm,to = "data.frame")
 
-tmod <- textmodel_lsa(jobs.dfm, nd=3) 
 
-biplot(y=tmod$docs[,2:3],x=tmod$features[,2:3], col=c("grey","red"),
-       xlab = "Dim 2", ylab="Dim 3")
+
+
+# Representation of the job position on the biplot
+tmod <- textmodel_lsa(jobs.dfm, nd = 3)
+biplot(
+  y = tmod$docs[, 2:3],
+  x = tmod$features[, 2:3],
+  col = c("grey", "red"),
+  xlab = "Dim 2",
+  ylab = "Dim 3"
+)
+
 ```
+
 
