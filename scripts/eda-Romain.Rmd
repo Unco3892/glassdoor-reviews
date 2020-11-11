@@ -3,21 +3,29 @@ title: "EDA-Romain"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE,message=FALSE}
 source(here::here("scripts/setup.R"))
 ```
 
 ## EDA
 
-
+# preprocessing of corpus
 ```{r }
+reviews.complete <- read.csv("/Users/romaindonati/Desktop/Text-Mining-Project-2020/data/Bank_reviews_processed.csv",stringsAsFactors = FALSE)
 
+reviews.corpus.pro <- corpus(x = reviews.complete,
+                             text_field = c("employer_pros","employer_cons"))
+
+#Romain: no need for word1 argument, as we are not concerned by symbols or whatever.
+reviews.tokens.pro <- tokens(reviews.corpus.pro, 
+                        remove_punct = TRUE, 
+                        remove_symbols = TRUE, 
+                        what="word")
+
+reviews.tokens.pro <- tokens_tolower(reviews.tokens.pro) %>% 
+  tokens_wordstem() %>%
+  tokens_remove(stopwords("english"))
+
+reviews.pro.dfm <- dfm(reviews.tokens.pro)
+dim(reviews.pro.dfm)
 ```
-
-## 
-
-
-```{r pressure, echo=FALSE}
-
-```
-
