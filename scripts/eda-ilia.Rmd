@@ -14,12 +14,12 @@ bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 ## Definitions
 
 Corpus = All reviews on GlassDoor for five major banks
-Text = Reviews for each bank
+Text = Reviews for each bank --> Used this also as the Document
 Tokens = Words in each review
 
 ### Data structure
 
-```{r }
+```{r}
 bank_reviews %>% glimpse
 ```
 
@@ -54,58 +54,82 @@ bank_reviews %>%
 
 ## EDA
 
-Making the tokenization based on the words.
+A general EDA for the reviews Note that here we treat each company as a document.
 
 ```{r}
 # creating function to take out the pros and cons of the reviews
-glassdoor_tokenizer <- function (a_tibble, text_column) {
-  # creating the new column name
-  new_col <- paste0(quo_name(enquo(text_column)), "_word")
-  # tokenization of the reviews
-  review_token <- tidytext::unnest_tokens(
-    a_tibble,
-    output = "word",
-    input = {{text_column}},
-    to_lower = TRUE,
-    strip_punct = TRUE,
-    strip_numeric = TRUE
-  ) %>%
-    # removing the stop words
-    anti_join(., stop_words, by = "word") %>%
-    rename(., !!(new_col) := "word")
-  # looking at the most frequent words
-  freq <- review_token %>%
-    # grouping is also possible also with review_id but this has not been done
-    group_by(company) %>%
-    count("{{text_column}}_word" := get(new_col), sort = TRUE) %>%
-    ungroup()
-  # indexing for the top 20 words
-  index <- top_n(freq, 20)
-  # create a function to be used for the ggplot aesthathics
-  fix_lables <- function (a_column){
-    stri_replace_all_fixed(a_column, c("_", "s"), c(" ", ""), vectorize_all = FALSE)
+glassdoor_tokenizer <-
+  function (a_tibble,
+            text_column,
+            n_top = 20,
+            TF_grouped = FALSE) {
+    # creating the new column name
+    new_col <- paste0(quo_name(enquo(text_column)), "_word")
+    # tokenization of the reviews
+    review_token <- tidytext::unnest_tokens(
+      a_tibble,
+      output = "word",
+      input = {{text_column}},
+      to_lower = TRUE,
+      strip_punct = TRUE,
+      strip_numeric = TRUE
+    ) %>%
+      # removing the stop words
+      anti_join(., stop_words, by = "word") %>%
+      rename(., !!(new_col) := "word")
+    # looking at the most frequent words
+    freq <- review_token %>%
+      # grouping is also possible also with review_id but this has not been done
+      group_by(company) %>%
+      count("{{text_column}}_word" := get(new_col), sort = TRUE) %>%
+      ungroup()
+    # indexing for the top 20 words
+    index <-
+      freq %>% 
+      `if`(TF_grouped, {.} %>% group_by(company), .) %>%
+      top_n(n_top)
+    # creating a function to be used for the ggplot aesthetics
+    fix_lables <- function (a_column) {
+      stri_replace_all_fixed(a_column, c("_", "s"), c(" ", ""), vectorize_all = FALSE)
     }
-  # designing a ggplot for the most frequent words
-  freq_plt <- freq %>%
-    filter(get(new_col) %in% (index %>% pull(get(new_col)))) %>%
-    ggplot(aes(x = get(new_col), y = n)) + geom_col() + coord_flip() + facet_grid(~ company) + theme_light() +
-    labs(title = paste0(
-      "Most frequent ",
-      fix_lables(new_col),
-      "s per bank"
-    ),
-    x = fix_lables(new_col))
-  output <-
-    list(
-      "Removing_stopwords" = review_token,
-      "Most_frequent_words" = freq,
-      "Plotting_most_frequent_words" = freq_plt
+    # designing a ggplot for the most frequent words
+    freq_plt <- freq %>%
+      filter(get(new_col) %in% (index %>% pull(get(new_col)))) %>%
+      ggplot(aes(x = get(new_col), y = n)) + geom_col() + coord_flip() + facet_grid( ~ company) + theme_light()
+    # another alternative for the wrap
+    # facet_wrap(~company, ncol = 2)
+    labs(
+      title = paste0("Most frequent ",
+                     fix_lables(new_col),
+                     "s per bank"),
+      x = fix_lables(new_col)
     )
-  return (output)
-}
+    output <-
+      list(
+        "Removing_stopwords" = review_token,
+        "Most_frequent_words" = freq,
+        "Plotting_most_frequent_words" = freq_plt
+      )
+    return (output)
+  }
 
+# in the overall document
 pros <- glassdoor_tokenizer(bank_reviews, employer_pros)
 cons <- glassdoor_tokenizer(bank_reviews, employer_cons)
+
+# Note to Ilia --> There is something strange happening here
+
+# specific to each document
+pros_grouped <- glassdoor_tokenizer(bank_reviews, employer_pros, n_top = 1, TF_grouped= TRUE)
+cons_grouped <- glassdoor_tokenizer(bank_reviews, employer_cons, n_top = 1, TF_grouped= TRUE)
+```
+
+The ggplot represents the most frequent words per company as the grouping was not done on the review but the company itself.
+
+
+```{r}
+
+
 ```
 
 <!-- See on average how many words each review contains -->
