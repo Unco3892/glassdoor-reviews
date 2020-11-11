@@ -7,14 +7,25 @@ output: html_document
 source(here::here("scripts/setup.R"))
 ```
 
-## EDA
+# Exploratory Data Analysis
 
-# preprocessing of corpus
+## Complete pros reviews set (bank variable not considered)
+
+
 ```{r }
+### Preprocessing of corpus
 reviews.complete <- read.csv("/Users/romaindonati/Desktop/Text-Mining-Project-2020/data/Bank_reviews_processed.csv",stringsAsFactors = FALSE)
 
+
 reviews.corpus.pro <- corpus(x = reviews.complete,
-                             text_field = c("employer_pros","employer_cons"))
+                             text_field = c("employer_pros"))
+
+```
+
+
+```{r }
+### tokenization
+library(lavaan)
 
 #Romain: no need for word1 argument, as we are not concerned by symbols or whatever.
 reviews.tokens.pro <- tokens(reviews.corpus.pro, 
@@ -22,10 +33,39 @@ reviews.tokens.pro <- tokens(reviews.corpus.pro,
                         remove_symbols = TRUE, 
                         what="word")
 
+#Use of stemming / could also use lemmitization
 reviews.tokens.pro <- tokens_tolower(reviews.tokens.pro) %>% 
   tokens_wordstem() %>%
   tokens_remove(stopwords("english"))
-
-reviews.pro.dfm <- dfm(reviews.tokens.pro)
-dim(reviews.pro.dfm)
 ```
+
+
+```{r }
+### Document frequency matrix
+reviews.pro.dfm <- dfm(reviews.tokens.pro)
+reviews.pro.dfm.tfidf<-dfm_tfidf(reviews.pro.dfm)
+```
+
+### first insights
+```{r}
+#sparcity
+sum(reviews.pro.dfm ==0)/length(reviews.pro.dfm)
+
+#frequency per terms
+reviews.pro.freq <- textstat_frequency(reviews.pro.dfm)
+head(reviews.pro.freq, 10)
+
+#Average number of words
+rowsum()
+```
+
+### Cloud of words
+```{r}
+
+library(wordcloud)
+wordcloud(words=reviews.pro.freq$feature,
+          freq=reviews.pro.freq$docfreq,
+          max.words = 100) 
+
+```
+
