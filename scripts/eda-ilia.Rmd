@@ -73,9 +73,9 @@ bank_reviews %>%
   kable_maker()
 
 # An alternative shorter approach
-bank_reviews %>% 
-  dplyr::count(company, name = "number of reviews") %>% 
-  kable_maker()
+# bank_reviews %>% 
+#   dplyr::count(company, name = "number of reviews") %>% 
+#   kable_maker()
 ```
 
 ## EDA
