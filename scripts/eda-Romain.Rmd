@@ -159,7 +159,7 @@ reviews.complete %>%
 ### Job analysis
 Here my goal is to see if jobs positions are really different from one company to another
 ```{r}
-#cleaning of the variable
+# select and clean variable employee_role
 reviews.complete <-
   separate(
     data = reviews.complete,
@@ -175,28 +175,46 @@ jobs.tokens <- tokens(
   jobs.corpus,
   remove_punct = TRUE,
   remove_symbols = TRUE,
-  what = "word"
+  what = "sentence"
 )
 
-jobs.dfm <- dfm(jobs.tokens)
-jobs.company <- reviews.complete$company
-jobs.dfm$company <- jobs.company
-jobs.dfm <- dfm_group(jobs.dfm, groups = "company")
+jobs.dfm <- dfm(jobs.tokens) # create dfm
+jobs.dfm$company <- reviews.complete$company
+jobs.dfm <- dfm_group(jobs.dfm, groups = "company") %>% 
+  dfm_sort(decreasing=TRUE)
+jobs.dfm <- jobs.dfm[,1:100] #sort dfm by only keeping most used term
 
-#analysis of most frequent job positions
-jobs.df<-convert(jobs.dfm,to = "data.frame")
+#filter unapropriate terms
+junk <- c(" anonymous employee",
+          " teller ii",
+          " teller i" ,
+          " vice president",
+          " assistant vice president",
+          " director",
+          " associate director"
+          )
+jobs.dfm <- jobs.dfm %>% dfm_remove(junk)
 
-
-
+# display position frequency by bank
+reviews.bank.pro.freq <- textstat_frequency(reviews.bank.pro.dfm,groups = "company")
+textstat_frequency(jobs.dfm,groups = "company") %>%
+  arrange(desc(frequency)) %>%
+  filter(rank<15) %>% 
+  ggplot(aes(x=feature, y=frequency)) + 
+  geom_col() + 
+  coord_flip() +
+  labs(title="Top 15 token frequency")
 
 # Representation of the job position on the biplot
 tmod <- textmodel_lsa(jobs.dfm, nd = 3)
+
 biplot(
   y = tmod$docs[, 2:3],
   x = tmod$features[, 2:3],
   col = c("grey", "red"),
   xlab = "Dim 2",
-  ylab = "Dim 3"
+  ylab = "Dim 3",
+  cex=0.8
 )
 
 ```
