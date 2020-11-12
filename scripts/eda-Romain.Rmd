@@ -13,15 +13,16 @@ source(here::here("scripts/setup.R"))
 
 
 ```{r }
-### Preprocessing of corpus
-reviews.complete <- read.csv("/Users/romaindonati/Desktop/Text-Mining-Project-2020/data/Bank_reviews_processed.csv",stringsAsFactors = FALSE)
+#importation of the corpus
+reviews.complete <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 
-
+#corpus for the pros
 reviews.corpus.pro <- corpus(x = reviews.complete,
                              text_field = c("employer_pros"))
 
 ```
 
+### Tokenization
 ```{r }
 ### tokenization
 library(lavaan)
@@ -38,25 +39,35 @@ reviews.tokens.pro <- tokens_tolower(reviews.tokens.pro) %>%
   tokens_remove(stopwords("english"))
 ```
 
-
+### Frequency and IDF/TF_IDF
 ```{r }
 ### Document frequency matrix
 reviews.pro.dfm <- dfm(reviews.tokens.pro)
 
 #tf_IDF
 reviews.pro.dfm.tfidf<-dfm_tfidf(reviews.pro.dfm)
-```
-
-### first insights
-```{r}
-#sparcity dfm
-sum(reviews.pro.dfm ==0)/length(reviews.pro.dfm)
-sparsity(reviews.pro.dfm)
 
 #frequency per terms 
 reviews.pro.freq <- textstat_frequency(reviews.pro.dfm)
-head(reviews.pro.freq, 10)
+```
 
+### frequency table and sparsity
+```{r}
+#sparsity dfm
+sum(reviews.pro.dfm ==0)/length(reviews.pro.dfm)
+sparsity(reviews.pro.dfm)
+
+#table frequency
+head(reviews.pro.freq, 10) %>%
+  kable_maker()
+
+#Average number of sentence in each review
+mean(nsentence(reviews.corpus.pro))
+```
+
+
+Top 15 frequency graph
+```{r}
 reviews.pro.freq %>%
   arrange(desc(frequency)) %>%
   filter(rank<15) %>% 
@@ -64,24 +75,18 @@ reviews.pro.freq %>%
   geom_col() + 
   coord_flip() +
   labs(title="Top 15 token frequency")
-
-
-#Average number of sentence in each review
-mean(nsentence(reviews.corpus.pro))
 ```
 
 ### Cloud of words
 ```{r}
-
+set.seed(1)
 library(wordcloud)
 wordcloud(words=reviews.pro.freq$feature,
           freq=reviews.pro.freq$docfreq,
           max.words = 100) 
-
 ```
 
-## By Bank
-
+## PROS sorted by bank
 ```{r}
 reviews.company <-reviews.complete$company
 reviews.pro.dfm$company <-reviews.company
@@ -103,6 +108,8 @@ reviews.bank.pro.freq %>%
   facet_wrap(~group, ncol = 3) +
   labs(title="Whole dataset top 15 token frequency by bank")
 ```
+Interistingly, it seems that great is more frequent than good for english-speaking banks. This is maybe the consequence of native english speaker vs non-native english speaker. To be checked with
+
 
 ### Keyness analysis for each bank compared to the other
 ```{r}
