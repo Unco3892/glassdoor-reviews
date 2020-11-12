@@ -156,18 +156,22 @@ EDA_handler <-
     # creating wordcloud if the option is set equal to TRUE
     if (word_cloud == TRUE) {
       set.seed(1234)
-      dev.new(width = 1000, height = 1000, unit = "px") 
+      dev.new(width = 1000, height = 1000, unit = "px")
       #many warnings are generated on this which is normal
+      if (aggregate_cloud == TRUE) {
+        freq_agg <- aggregate(as.formula(paste("n", "~", new_col, sep= " "))
+                              , FUN = sum, data=freq)
+      }
       clouds <-
         wordcloud::wordcloud(
-          words = (freq %>% pull(!!new_col)),
-          freq = (freq %>% pull(n)),
+          words = (`if`(aggregate_cloud,freq_agg, freq) %>% pull(!!new_col)),
+          freq = (`if`(aggregate_cloud,freq_agg, freq) %>% pull(n)),
           min.freq = 2,
           max.words = 10,
           random.order = FALSE,
           random.color = FALSE,
           colors = brewer.pal(8, "Dark2"))
-      }
+    }
     
     # generating the output
     output <-
@@ -188,7 +192,7 @@ cons_tf <- EDA_handler(bank_reviews, employer_cons)
 
 
 # TF_IDF approach
-pros_tf_idf <- EDA_handler(bank_reviews, employer_pros, n_top = 1,TF_grouped= TRUE, TF_IDF = TRUE)
+pros_tf_idf <- EDA_handler(bank_reviews, employer_pros, n_top = 5,TF_grouped= TRUE, TF_IDF = TRUE)
 cons_tf_idf <- EDA_handler(bank_reviews, employer_cons, n_top = 1,TF_grouped= TRUE, TF_IDF = TRUE)
 
 # The grouped and specific to each document --> Only one word is shown which is quite strange and requires more investigation
@@ -198,6 +202,7 @@ pros_grouped <- EDA_handler(bank_reviews, employer_pros, n_top = 1, TF_grouped= 
 pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = TRUE)
 
 # aggregated wordcloud can also be produced.
+pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE)
 
 # The code that can be used as a wordcloud replacement is the following.
   #   if (word_cloud == TRUE) {
@@ -213,6 +218,7 @@ pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = 
   # }
 
 # what more to be done?
+# try with lemmatization approach
 # lexical diversity
 # compute keynesses
 ```
