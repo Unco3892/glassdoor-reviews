@@ -19,6 +19,7 @@ packages <- c(
   "scales",
   "magrittr",
   "stringi",
+  "questionr",
   # for plotting
   "knitr",
   "kableExtra",

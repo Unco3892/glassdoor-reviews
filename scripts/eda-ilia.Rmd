@@ -29,6 +29,32 @@ We can summarize the information for each bank.
 
 NOTE TO ilia: Replace the function below with an across as summarize_if is deprecated.
 
+Checking for NAs and duplicates.
+
+```{r}
+freq.na(bank_reviews)
+
+sum(duplicated(bank_reviews$review_id)) #The output shows that 429 reviews are duplicated, let's check them
+
+# All the row's who values are duplicated
+bank_reviews %>%
+  filter(duplicated(review_id))
+
+# These are all the duplicated values
+bank_reviews %>% group_by(review_id) %>% filter(n()>1) %>% ungroup()
+
+# We look at a specific example
+bank_reviews %>% filter(review_id == "empReview_38099527")
+
+# We will remove these rows
+bank_reviews %<>%
+  filter(!duplicated(review_id))
+
+# We confirm that the duplicates are no longer there
+bank_reviews %>% filter(review_id == "empReview_38099527")
+```
+
+
 ```{r}
 # General overview
 bank_reviews %>%
@@ -205,6 +231,7 @@ library(wordcloud2)
 Also `quanteda` library could be used if needed..
 
 ```{r}
-dummy <- bank_reviews$employer_pros %>% corpus()
+pros_corpus <- bank_reviews %>% select(company, review_id, employer_pros) %>% corpus(text_field = "employer_pros")
+
 ```
 
