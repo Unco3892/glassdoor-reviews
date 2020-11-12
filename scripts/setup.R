@@ -22,6 +22,9 @@ packages <- c(
   # for plotting
   "knitr",
   "kableExtra",
+  "wordcloud",
+  "RColorBrewer",
+  "ggwordcloud",
   # for the report
   "bookdown",
   "rmarkdown",
