@@ -76,6 +76,18 @@ bank_reviews %>%
 # bank_reviews %>% 
 #   dplyr::count(company, name = "number of reviews") %>% 
 #   kable_maker()
+
+# calculating the mean number of words
+mean_words_cal <- function(a_word_column) {
+  mean(sapply(strsplit(
+    as.character(a_word_column), "[[:space:]]+"
+  ), length))
+}
+
+# applying the function to the two word columns
+bank_reviews %>% group_by(company) %>% 
+  summarize(mean_pro_words = mean_words_cal(employer_pros),
+            mean_con_words = mean_words_cal(employer_cons))
 ```
 
 ## EDA
@@ -238,6 +250,4 @@ Also `quanteda` library could be used if needed..
 
 ```{r}
 pros_corpus <- bank_reviews %>% select(company, review_id, employer_pros) %>% corpus(text_field = "employer_pros")
-
 ```
-

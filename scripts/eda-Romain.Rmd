@@ -85,6 +85,15 @@ textstat_lexdiv(reviews.bank.pro.dfm,
   coord_flip() +
   xlab("Text") +
   ylab("Yule's index")
+
+
+textstat_lexdiv(reviews.bank.pro.dfm,
+                measure = "TTR") %>%
+  ggplot(aes(x = reorder(document, TTR), y = TTR)) +
+  geom_point() +
+  coord_flip() +
+  xlab("Text") +
+  ylab("TTR's index")
 ```
 
 ### Job analysis
