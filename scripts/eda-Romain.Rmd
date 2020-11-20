@@ -161,7 +161,7 @@ biplot(
 # Sentiment analysis for the pros reviews
 Trying to understand if positive reviews employee sentiments vary from bank to bank.
 Obviously, some reviews are really short and do not contain any sentiment. However, I suppose that some reviews are more develloped and could potentially contain sentiment/feeling that could be interesting.
-```{r}
+```{r, message=FALSE}
 library(tidyverse)
 library(tidytext)
 library(readr)
@@ -170,34 +170,46 @@ library(readr)
 # I create a function, however, it should be possible to do it using nest function (dplyr), but laziness
 
 # We create a function that extract each review and aggregate them in one vector
-merge.review <- function(.Data, companyname) {
+merge.review.pro <- function(.Data, companyname) {
   .Data %>%
     filter(company== companyname) %>%
     select(employer_pros) %>%
     str_c(sep = " ",collapse = TRUE)
 }
 
-# We iterate this function for each bank
-company.name <-unique(reviews.complete$company)
-reviews.bank.merge <- as.character("","","","","")
-
-for (i in 1:length(company.name)) {
-reviews.bank.merge[i] <-merge.review(reviews.complete, company.name[i])
+merge.review.con <- function(.Data, companyname) {
+  .Data %>%
+    filter(company== companyname) %>%
+    select(employer_cons) %>%
+    str_c(sep = " ",collapse = TRUE)
 }
 
+# We iterate this function for each bank
+company.name <-unique(reviews.complete$company)
+reviews.bank.pro <- c("","","","","")
+reviews.bank.con <- c("","","","","")
 
-reviews.bank.merge <- corpus(x = reviews.bank.merge,
-                             text_field = c("employer_pros"))
+for (i in 1:length(company.name)) {
+reviews.bank.pro[i] <-merge.review.pro(reviews.complete, company.name[i])
+}
 
-reviews.bank.merge <- tokens(reviews.bank.merge, 
-                        remove_punct = TRUE, 
-                        remove_symbols = TRUE, 
-                        what="word")
+for (i in 1:length(company.name)) {
+reviews.bank.con[i] <-merge.review.con(reviews.complete, company.name[i])
+}
 
-get_sentiments("nrc")
+# We merge the prosand cons together and prepare the corpus
+reviews.bank<-paste(reviews.bank.pro,reviews.bank.con,sep = "")
+review.cp <- corpus(reviews.bank)
 
-reviews.bank.merge.sent <- reviews.bank.merge %>%
-  inner_join(get_sentiments("nrc"))
+# We tokenize and plot
+review.tk <- tokens(review.cp, remove_numbers=TRUE, remove_punct=TRUE, remove_symbols=TRUE, remove_separators=TRUE)
+review.tk <- tokens_tolower(review.tk) 
+review.tk <- tokens_replace(review.tk, pattern=hash_lemmas$token, replacement = hash_lemmas$lemma)
+review.tk <- review.tk %>% 
+  tokens_remove(stopwords("english")) %>% tokens_remove("reuter")
+review.sent <- tokens_lookup(review.tk, dictionary = data_dictionary_LSD2015) %>% dfm() %>% tidy()
+
+ggplot(review.sent,aes(x=document, y=count, fill=term)) + geom_bar(stat="identity") + coord_flip()
 
 ```
 
