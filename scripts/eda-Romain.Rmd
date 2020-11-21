@@ -10,7 +10,7 @@ source(here::here("scripts/setup.R"))
 # Exploratory Data Analysis ROMAIN
 
 ## Complete pros reviews set (each review is a doc)
-```{r ,message=FALSE,eval=FALSE}
+```{r ,message=FALSE}
 library(lexicon)
 
 #importation of the corpus
@@ -172,48 +172,72 @@ library(readr)
 # We create a function that extract each review and aggregate them in one vector
 merge.review.pro <- function(.Data, companyname) {
   .Data %>%
-    filter(company== companyname) %>%
+    filter(company == companyname) %>%
     select(employer_pros) %>%
-    str_c(sep = " ",collapse = TRUE)
+    str_c(sep = " ", collapse = TRUE)
 }
 
 merge.review.con <- function(.Data, companyname) {
   .Data %>%
-    filter(company== companyname) %>%
+    filter(company == companyname) %>%
     select(employer_cons) %>%
-    str_c(sep = " ",collapse = TRUE)
+    str_c(sep = " ", collapse = TRUE)
 }
 
 # We iterate this function for each bank
-company.name <-unique(reviews.complete$company)
-reviews.bank.pro <- c("","","","","")
-reviews.bank.con <- c("","","","","")
+company.name <- unique(reviews.complete$company)
+reviews.bank.pro <- c("", "", "", "", "")
+reviews.bank.con <- c("", "", "", "", "")
 
 for (i in 1:length(company.name)) {
-reviews.bank.pro[i] <-merge.review.pro(reviews.complete, company.name[i])
+  reviews.bank.pro[i] <-
+    merge.review.pro(reviews.complete, company.name[i])
 }
 
 for (i in 1:length(company.name)) {
-reviews.bank.con[i] <-merge.review.con(reviews.complete, company.name[i])
+  reviews.bank.con[i] <-
+    merge.review.con(reviews.complete, company.name[i])
 }
 
 # We merge the prosand cons together and prepare the corpus
-reviews.bank<-paste(reviews.bank.pro,reviews.bank.con,sep = "")
+reviews.bank <- paste(reviews.bank.pro, reviews.bank.con, sep = "")
 review.cp <- corpus(reviews.bank)
 
-# We tokenize and plot
-review.tk <- tokens(review.cp, remove_numbers=TRUE, remove_punct=TRUE, remove_symbols=TRUE, remove_separators=TRUE)
-review.tk <- tokens_tolower(review.tk) 
-review.tk <- tokens_replace(review.tk, pattern=hash_lemmas$token, replacement = hash_lemmas$lemma)
-review.tk <- review.tk %>% 
-  tokens_remove(stopwords("english")) %>% tokens_remove("reuter")
-review.sent <- tokens_lookup(review.tk, dictionary = data_dictionary_LSD2015) %>% dfm() %>% tidy()
+# We tokenize and assign the sentiment dictionnary to every pertinent token
+review.tk <-
+  review.cp %>% tokens(
+    remove_numbers = TRUE,
+    remove_punct = TRUE,
+    remove_symbols = TRUE,
+    remove_separators = TRUE
+  ) %>%
+  tokens_tolower() %>%
+  tokens_replace(pattern = hash_lemmas$token, replacement = hash_lemmas$lemma) %>%
+  tokens_remove(stopwords("english"))
 
-ggplot(review.sent,aes(x=document, y=count, fill=term)) + geom_bar(stat="identity") + coord_flip()
+review.sent <-
+  tokens_lookup(review.tk, dictionary = data_dictionary_LSD2015) %>%
+  dfm() %>%
+  tidy()
 
+# We scale the data to have comparable results
+review.sent <- review.sent %>%
+  group_by(document) %>%
+  mutate (factor = 100 / sum(count)) %>%
+  mutate(percent = (count * factor) / 100)
+
+# We replace the name of docs by the company name
+company.df <- t(t(company.name))
+review.sent$document <- rbind(company.df, company.df)
+
+# We plot the results
+review.sent %>% ggplot(aes(x = document, y = percent, fill = term)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(title = "Sentiment Analysis", fill = "")
 ```
-
-
 
 
 
