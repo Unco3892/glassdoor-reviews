@@ -108,7 +108,7 @@ bank_reviews %>% group_by(company) %>%
       "3rd_Qu." = function(x) quantile_fun(x, 0.75)
     )
   )) %>%
-  gather(metric, val, 2:ncol(bank_reviews)) %>%
+  gather(metric, val, 2:ncol(.)) %>%
   spread(company, val) %>% 
   kable_maker()
 ```
@@ -313,12 +313,12 @@ neg_sem <- aggregate(value~company, data=con_values, FUN=mean)  %>%
   arrange(desc(value))
 
 # Both semantics combined
-overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
-  mutate(score_numerical_analysis = value.x+value.y) %>% 
+scores_compared <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
+  mutate(afiin_senti_score = value.x+value.y) %>% 
   select(-c(2,3))
 
 # Comparing the two scores
-existing_score %>% left_join(overall_score) %>% arrange(desc(2))
+existing_score %>% left_join(scores_compared) %>% arrange(desc(2))
 ```
 
 More advanced methods with valence shifters.
@@ -338,19 +338,24 @@ val_shifter <- function (a_tibble){
     left_join(object_2, by = c("company", "review_id")) %>%
     mutate(score_numerical_analysis = ave_sentiment.x + ave_sentiment.y) %>%
     select(1, 2, score_numerical_analysis)
+  
   average_score <- overall_score %>% group_by(company) %>%
-    summarize(mean_sentiment_score=mean(score_numerical_analysis))
-  average_score
+    summarize(valshifter_senti_score=mean(score_numerical_analysis))
+  
+  return(average_score)
   }
 
 valence_score<-val_shifter(bank_reviews)
 
-# Both semantics combined
-overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% mutate(score_numerical_analysis = value.x+value.y) %>% select(-c(2,3))
-
 # Comparing the two scores
-existing_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% arrange(desc(employer_rating))
-existing_score %>% left_join(valence_score,by = "company") %>% left_join(overall_score,by = "company") %>% arrange(desc(2))
+actual_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% 
+  arrange(desc(employer_rating))
+
+existing_score %>% 
+  left_join(valence_score,by = "company") %>% 
+  left_join(scores_compared,by = "company") %>%
+  rename(actual_employer_rating = employer_rating) %>% 
+  arrange(desc(2)) %>% kable_maker()
 ```
 
 Trial with other packages to see the results of other dictionaries.
@@ -372,7 +377,7 @@ syuzhet <- setNames(as.data.frame(lapply(c("syuzhet", "bing", "afinn", "nrc"),
 SentimentAnalysis <- apply(analyzeSentiment(ase)[c('SentimentGI', 'SentimentLM', 'SentimentQDAP') ], 2, round, 2)
 colnames(SentimentAnalysis) <- gsub('^Sentiment', "SA_", colnames(SentimentAnalysis))
 
-left_just(data.frame(
+left_j(data.frame(
     stanford = sentiment_stanford(ase)[["sentiment"]],
     sentimentr_jockers_rinker = round(sentiment(ase, question.weight = 0)[["sentiment"]], 2),
     sentimentr_jockers = round(sentiment(ase, lexicon::hash_sentiment_jockers, question.weight = 0)[["sentiment"]], 2),    
