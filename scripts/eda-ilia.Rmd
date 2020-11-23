@@ -9,6 +9,7 @@ source(here::here("scripts/setup.R"))
 
 # Importing the data
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
+
 ```
 
 ## Definitions
@@ -93,7 +94,7 @@ median_words_cal <- function(a_word_column) {
 quantile_fun <- function(a_word_column,a_quantile) {
   quantile(sapply(strsplit(
     as.character(a_word_column), "[[:space:]]+"
-  ), length), quant, na.rm = TRUE)
+  ), length), a_quantile, na.rm = TRUE)
 }
 
 # applying the function to the two word columns
@@ -107,7 +108,7 @@ bank_reviews %>% group_by(company) %>%
       "3rd_Qu." = function(x) quantile_fun(x, 0.75)
     )
   )) %>%
-  gather(metric, val, 2:ncol(dummy)) %>%
+  gather(metric, val, 2:ncol(bank_reviews)) %>%
   spread(company, val) %>% 
   kable_maker()
 ```
