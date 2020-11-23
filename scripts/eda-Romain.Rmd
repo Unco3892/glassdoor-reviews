@@ -36,6 +36,8 @@ to.be.removed <- c("ubs","jp","chase","td","morgan","hsbc","deutsche","db","jpmc
 reviews.tokens.pro <- tokens_tolower(reviews.tokens.pro) %>% tokens_replace(pattern=hash_lemmas$token, replacement = hash_lemmas$lemma) %>% tokens_remove(c(stopwords("english"),to.be.removed))
 ```
 
+
+
 ## PROS sorted by bank
 ```{r}
 reviews.pro.dfm <- dfm(reviews.tokens.pro)
@@ -81,7 +83,6 @@ textstat_lexdiv(reviews.bank.pro.dfm,
   coord_flip() +
   xlab("Text") +
   ylab("Yule's index")
-
 
 textstat_lexdiv(reviews.bank.pro.dfm,
                 measure = "TTR") %>%
@@ -129,7 +130,7 @@ to.be.removed <- c(" anonymous employee",
           " associate director"
           )
 jobs.dfm <- jobs.dfm %>% dfm_remove(to.be.removed)
-jobs.dfm <- jobs.dfm[,1:100] #sort dfm by only keeping most used term for better display
+jobs.dfm <- jobs.dfm[,1:50] #sort dfm by only keeping most used term for better display
 
 # We display position frequency by bank
 
@@ -156,7 +157,13 @@ biplot(
   ylab = "Dim 3",
   cex=0.8
 )
+
 ```
+
+
+
+
+
 
 # Sentiment analysis for the pros reviews
 Trying to understand if positive reviews employee sentiments vary from bank to bank.
@@ -220,25 +227,31 @@ review.sent <-
   dfm() %>%
   tidy()
 
-# We scale the data to have comparable results
-review.sent <- review.sent %>%
-  group_by(document) %>%
-  mutate (factor = 100 / sum(count)) %>%
-  mutate(percent = (count * factor) / 100)
-
 # We replace the name of docs by the company name
 company.df <- t(t(company.name))
 review.sent$document <- rbind(company.df, company.df)
 
+# We scale the data to have comparable results
+review.sent.scale <- review.sent %>%
+  group_by(document) %>%
+  mutate (factor = 100 / sum(count)) %>%
+  mutate(percent = (count * factor) / 100)
+
 # We plot the results
-review.sent %>% ggplot(aes(x = document, y = percent, fill = term)) +
+review.sent %>% ggplot(aes(x = document, y = count, fill = term)) +
   geom_bar(stat = "identity") +
   coord_flip() +
   xlab("") +
   ylab("") +
-  labs(title = "Sentiment Analysis", fill = "")
+  labs(title = "Sentiment Analysis (absolute value)", fill = "")
+
+# We plot the results
+review.sent.scale %>% ggplot(aes(x = document, y = percent, fill = term)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(title = "Sentiment Analysis (relative value)", fill = "")
 ```
-
-
 
 
