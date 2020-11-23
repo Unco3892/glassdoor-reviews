@@ -1,0 +1,95 @@
+---
+title: "Embedding-JDL"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+# Loading packages and knitr options
+source(here::here("scripts/setup.R"))
+
+library(lexicon)
+library(ngram)
+library(ranger)
+
+# Importing the data
+bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
+
+# # Adding word count column for pos
+# bank_reviews$wcount.pos <- unlist(lapply(bank_reviews$employer_cons, wordcount))
+# 
+# # Keeping only review with more than 5 words
+# bank_reviews_clean <- bank_reviews %>%
+#   filter(wcount.pos > 5)
+
+# Corpus creation for pros
+corpus.pros <- corpus(x = bank_reviews,
+                             text_field = c("employer_pros"))
+
+# Corpus creation for pros
+corpus.cons <- corpus(x = bank_reviews,
+                             text_field = c("employer_cons"))
+```
+
+```{r}
+# token for pros
+tokens.pros <- tokens(corpus.pros, 
+                        remove_punct = TRUE, 
+                        remove_symbols = TRUE, 
+                        remove_url = TRUE) %>% 
+  tokens_tolower() %>% tokens_wordstem() %>%
+  tokens_remove(stopwords("english")) 
+
+# token for cons
+tokens.cons <- tokens(corpus.cons, 
+                        remove_punct = TRUE, 
+                        remove_symbols = TRUE, 
+                        remove_url = TRUE) %>% 
+  tokens_tolower() %>% tokens_wordstem() %>%
+  tokens_remove(stopwords("english")) 
+
+# tfidf pros
+tfidf.pros <- dfm_tfidf(dfm(tokens.pros))
+
+# tfidf cons
+tfidf.cons <- dfm_tfidf(dfm(tokens.cons))
+```
+
+
+# Random Forest
+
+```{r}
+# Retriving the ratings
+y <- docvars(tokens.cons, "employer_rating")
+
+# Selecting the candidates for the number of dimensions
+nd.vec <- c(5, 10, 15, 20, 25, 30)
+
+# Creating a result matrix
+rmse.rf <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.rf) <- nd.vec
+colnames(rmse.rf) <- nd.vec
+
+# Creating Training Set
+set.seed(123)
+index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
+
+# Compute the RMSE for each combination of #Topic for pros and cons
+for (i in 1:length(nd.vec)){
+  for (j in 1:length(nd.vec)){
+  
+  lsa.pros <- textmodel_lsa(tfidf.pros, nd=nd.vec[i])
+  lsa.cons <- textmodel_lsa(tfidf.cons, nd=nd.vec[j])
+  df <- data.frame(Score=y, X1=lsa.pros$docs, X2=lsa.cons$docs)
+  df.tr <- df[index.tr,]
+  df.te <- df[-index.tr,]
+
+  reviews.rf <- ranger(Score ~ ., 
+                      data = df.tr)
+pred.te <- predict(reviews.rf, df.te)$predictions
+rmse.rf[i,j] <- sqrt(mean((pred.te - df.te$Score)^2))
+}
+}
+```
+
+
