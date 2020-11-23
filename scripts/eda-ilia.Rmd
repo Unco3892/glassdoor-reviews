@@ -84,10 +84,29 @@ mean_words_cal <- function(a_word_column) {
   ), length))
 }
 
+median_words_cal <- function(a_word_column) {
+  median(sapply(strsplit(
+    as.character(a_word_column), "[[:space:]]+"
+  ), length))
+}
+
+last_tenth <- function(a_word_column) {
+  quantile(sapply(strsplit(
+    as.character(a_word_column), "[[:space:]]+"
+  ), length), 0.9, na.rm = TRUE)
+}
+
 # applying the function to the two word columns
 bank_reviews %>% group_by(company) %>% 
   summarize(mean_pro_words = mean_words_cal(employer_pros),
-            mean_con_words = mean_words_cal(employer_cons))
+            mean_con_words = mean_words_cal(employer_cons),
+            median_pro_words = median_words_cal(employer_pros),
+            median_con_words = median_words_cal(employer_cons),
+            last_tenth_pros = last_tenth(employer_pros),
+            last_tenth_cons = last_tenth(employer_cons)
+            ) %>% 
+  View()
+
 ```
 
 ## EDA
@@ -305,7 +324,7 @@ neg_sem <- aggregate(value~company, data=con_values, FUN=mean)  %>%
 
 # Both semantics combined
 overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
-  mutate(overall_score = value.x+value.y) %>% 
+  mutate(score_numerical_analysis = value.x+value.y) %>% 
   select(-c(2,3))
 
 # Comparing the two scores
@@ -318,9 +337,16 @@ More advanced methods with valence shifters
 library(sentimentr)
 library(lexicon)
 
-
 mytext <- get_sentences(bank_reviews$employer_pros)
 
-sentiment(mytext)
+sentiments <- sentiment(mytext)
+
+# Both semantics combined
+overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
+  mutate(score_numerical_analysis = value.x+value.y) %>% 
+  select(-c(2,3))
+
+# Comparing the two scores
+existing_score %>% left_join(overall_score, sentiments) %>% arrange(desc(2))
 
 ```
