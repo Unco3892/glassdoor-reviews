@@ -314,7 +314,7 @@ aggregate(value~company, data=values, FUN=mean) %>%
 # Mean employer rating existing in the raw data
 existing_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% arrange(desc(employer_rating))
 
-# Highest semantic (positive)
+# Highest semantic (positive)install
 pos_sem <- aggregate(value~company, data=values, FUN=mean)  %>% 
   arrange(desc(value))
 
@@ -337,9 +337,9 @@ More advanced methods with valence shifters
 library(sentimentr)
 library(lexicon)
 
-mytext <- get_sentences(bank_reviews$employer_pros)
+text_pos <- get_sentences(bank_reviews$employer_pros)
 
-sentiments <- sentiment(mytext)
+sentiments <- sentiment(mytext, question.weight = 0)
 
 # Both semantics combined
 overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
