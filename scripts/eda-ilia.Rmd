@@ -361,19 +361,26 @@ val_shifter <- function (a_tibble){
     select(1, 2, score_numerical_analysis)
   average_score <- overall_score %>% group_by(company) %>%
     summarize(mean_sentiment_score=mean(score_numerical_analysis))
+  average_score
   }
 
-val_shifter(bank_reviews_head)
+valence_score<-val_shifter(bank_reviews)
 
 
 # Both semantics combined
-overall_score <- sentiments_pos %>% left_join(sentiments_neg, by = "company") %>% mutate(score_numerical_analysis = value.x+value.y) %>% select(-c(2,3))
+overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% mutate(score_numerical_analysis = value.x+value.y) %>% select(-c(2,3))
 
 # Comparing the two scores
-existing_score %>% left_join(overall_score, sentiments) %>% arrange(desc(2))
+existing_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% arrange(desc(employer_rating))
+existing_score %>% left_join(valence_score,by = "company") %>% left_join(overall_score,by = "company") %>% arrange(desc(2))
 
 # Approach two is to do them together
 
-
-
 ```
+
+
+
+
+
+
+
