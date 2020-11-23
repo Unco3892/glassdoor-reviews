@@ -251,3 +251,76 @@ Also `quanteda` library could be used if needed..
 ```{r}
 pros_corpus <- bank_reviews %>% select(company, review_id, employer_pros) %>% corpus(text_field = "employer_pros")
 ```
+
+
+
+Trying out some things with sentiment analysis and dictionaries.
+
+```{r}
+pro_sentiments <- pros_tf$Removing_stopwords %>% rename(word= employer_pros_word)
+
+con_sentiments <- cons_tf$Removing_stopwords %>% rename(word= employer_cons_word)
+
+
+# Dictionaries for categories
+get_sentiments("nrc")
+
+crude_sentiment <- pro_sentiments %>% inner_join(get_sentiments("nrc"))
+
+crude_sentiment %>% group_by(company, sentiment) %>%  summarize(n = n()) %>% 
+  mutate(freq = n / sum(n)) %>% ggplot(aes(x = sentiment, y = freq, fill = sentiment)) + 
+  geom_bar(stat = "identity", alpha = 0.8) + 
+  facet_wrap(~ company) + coord_flip()
+
+# Dictionaries by values
+get_sentiments("afinn")
+
+library("textstem")
+
+# Creating the lemmatization
+pro_sentiments %<>% mutate(word_lemma = textstem::lemmatize_strings(word))
+ 
+con_sentiments %<>% mutate(word_lemma = textstem::lemmatize_strings(word))
+
+values <-  pro_sentiments %>% inner_join(get_sentiments("afinn"))
+
+con_values <- con_sentiments %>% inner_join(get_sentiments("afinn"))
+
+# Looking at the values generated
+aggregate(value~company, data=values, FUN=mean) %>% 
+  ggplot(aes(x = company, y = value)) + 
+  geom_bar(stat = "identity") + coord_flip()
+
+
+# Mean employer rating existing in the raw data
+existing_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% arrange(desc(employer_rating))
+
+# Highest semantic (positive)
+pos_sem <- aggregate(value~company, data=values, FUN=mean)  %>% 
+  arrange(desc(value))
+
+# Highest semantic (negative)
+neg_sem <- aggregate(value~company, data=con_values, FUN=mean)  %>% 
+  arrange(desc(value))
+
+# Both semantics combined
+overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
+  mutate(overall_score = value.x+value.y) %>% 
+  select(-c(2,3))
+
+# Comparing the two scores
+existing_score %>% left_join(overall_score) %>% arrange(desc(2))
+```
+
+More advanced methods with valence shifters
+
+```{r}
+library(sentimentr)
+library(lexicon)
+
+
+mytext <- get_sentences(bank_reviews$employer_pros)
+
+sentiment(mytext)
+
+```
