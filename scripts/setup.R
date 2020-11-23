@@ -20,6 +20,9 @@ packages <- c(
   "magrittr",
   "stringi",
   "questionr",
+  "sentimentr",
+  "lexicon",
+  "textstem",
   # for plotting
   "knitr",
   "kableExtra",

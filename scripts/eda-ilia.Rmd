@@ -90,23 +90,26 @@ median_words_cal <- function(a_word_column) {
   ), length))
 }
 
-last_tenth <- function(a_word_column) {
+quantile_fun <- function(a_word_column,a_quantile) {
   quantile(sapply(strsplit(
     as.character(a_word_column), "[[:space:]]+"
-  ), length), 0.9, na.rm = TRUE)
+  ), length), quant, na.rm = TRUE)
 }
 
 # applying the function to the two word columns
-bank_reviews %>% group_by(company) %>% 
-  summarize(mean_pro_words = mean_words_cal(employer_pros),
-            mean_con_words = mean_words_cal(employer_cons),
-            median_pro_words = median_words_cal(employer_pros),
-            median_con_words = median_words_cal(employer_cons),
-            last_tenth_pros = last_tenth(employer_pros),
-            last_tenth_cons = last_tenth(employer_cons)
-            ) %>% 
-  View()
-
+bank_reviews %>% group_by(company) %>%
+  summarize(across(
+    c(employer_pros, employer_cons),
+    c(
+      "1st_Qu." = function(x)quantile_fun(x, 0.25),
+      "Median" = median_words_cal,
+      "Mean" = mean_words_cal,
+      "3rd_Qu." = function(x) quantile_fun(x, 0.75)
+    )
+  )) %>%
+  gather(metric, val, 2:ncol(dummy)) %>%
+  spread(company, val) %>% 
+  kable_maker()
 ```
 
 ## EDA
@@ -235,19 +238,6 @@ pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = 
 # aggregated wordcloud can also be produced.
 pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE)
 
-# The code that can be used as a wordcloud replacement is the following.
-  #   if (word_cloud == TRUE) {
-  #     top_words <- freq %>% top_n(100, wt= n)
-  #     cloudy_words <-
-  #       ggplot(top_words, aes(label = get(new_col), size =n)) +
-  # geom_text_wordcloud(area_corr = TRUE, rm_outside = TRUE)+
-  #     # eccentricity = 0.35
-  # scale_size_area(max_size = 50) +
-  #   theme_minimal()
-  #     }
-  #   cloudy_words
-  # }
-
 # what more to be done?
 # try with lemmatization approach
 # lexical diversity
@@ -294,7 +284,6 @@ crude_sentiment %>% group_by(company, sentiment) %>%  summarize(n = n()) %>%
 # Dictionaries by values
 get_sentiments("afinn")
 
-library("textstem")
 
 # Creating the lemmatization
 pro_sentiments %<>% mutate(word_lemma = textstem::lemmatize_strings(word))
@@ -329,23 +318,12 @@ overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>%
 
 # Comparing the two scores
 existing_score %>% left_join(overall_score) %>% arrange(desc(2))
-
-library(sentimentr)
-library(lexicon)
 ```
 
-More advanced methods with valence shifters
+More advanced methods with valence shifters.
 
 ```{r}
-# Two approach: Approach one do them separately
-text_pos <- get_sentences(bank_reviews$employer_pros)
-text_neg <- get_sentences(bank_reviews$employer_cons)
-
-sentiments_pos <- sentiment(text_pos, question.weight = 0)
-sentiments_neg <- sentiment(text_neg, question.weight = 0)
-
-bank_reviews_head <- bank_reviews %>% head(100)
-
+# Here we add the scores of the reviews
 val_shifter <- function (a_tibble){
   object_1 <- a_tibble %>%
     dplyr::mutate(pros = get_sentences(employer_pros)) %$%
@@ -366,15 +344,17 @@ val_shifter <- function (a_tibble){
 
 valence_score<-val_shifter(bank_reviews)
 
-
 # Both semantics combined
 overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% mutate(score_numerical_analysis = value.x+value.y) %>% select(-c(2,3))
 
 # Comparing the two scores
 existing_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% arrange(desc(employer_rating))
 existing_score %>% left_join(valence_score,by = "company") %>% left_join(overall_score,by = "company") %>% arrange(desc(2))
+```
 
+Trial with other packages to see the results of other dictionaries.
 
+```{r}
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load_gh("trinker/sentimentr", "trinker/stansent", "sfeuerriegel/SentimentAnalysis", "wrathematics/meanr")
 pacman::p_load(syuzhet, qdap, microbenchmark, RSentiment)
