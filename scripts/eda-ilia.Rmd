@@ -329,24 +329,51 @@ overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>%
 
 # Comparing the two scores
 existing_score %>% left_join(overall_score) %>% arrange(desc(2))
+
+library(sentimentr)
+library(lexicon)
 ```
 
 More advanced methods with valence shifters
 
 ```{r}
-library(sentimentr)
-library(lexicon)
-
+# Two approach: Approach one do them separately
 text_pos <- get_sentences(bank_reviews$employer_pros)
+text_neg <- get_sentences(bank_reviews$employer_cons)
 
-sentiments <- sentiment(mytext, question.weight = 0)
+sentiments_pos <- sentiment(text_pos, question.weight = 0)
+sentiments_neg <- sentiment(text_neg, question.weight = 0)
+
+bank_reviews_head <- bank_reviews %>% head(100)
+
+val_shifter <- function (a_tibble){
+  object_1 <- a_tibble %>%
+    dplyr::mutate(pros = get_sentences(employer_pros)) %$%
+    sentiment_by(pros, list(company, review_id))
+  
+  object_2<- a_tibble %>%
+    dplyr::mutate(cons = get_sentences(employer_cons)) %$%
+    sentiment_by(cons, list(company, review_id))
+  
+  overall_score <-object_1 %>% 
+    left_join(object_2, by = c("company", "review_id")) %>%
+    mutate(score_numerical_analysis = ave_sentiment.x + ave_sentiment.y) %>%
+    select(1, 2, score_numerical_analysis)
+  average_score <- overall_score %>% group_by(company) %>%
+    summarize(mean_sentiment_score=mean(score_numerical_analysis))
+  }
+
+val_shifter(bank_reviews_head)
+
 
 # Both semantics combined
-overall_score <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
-  mutate(score_numerical_analysis = value.x+value.y) %>% 
-  select(-c(2,3))
+overall_score <- sentiments_pos %>% left_join(sentiments_neg, by = "company") %>% mutate(score_numerical_analysis = value.x+value.y) %>% select(-c(2,3))
 
 # Comparing the two scores
 existing_score %>% left_join(overall_score, sentiments) %>% arrange(desc(2))
+
+# Approach two is to do them together
+
+
 
 ```
