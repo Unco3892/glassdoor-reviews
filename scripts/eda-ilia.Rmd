@@ -114,6 +114,7 @@ bank_reviews %>% group_by(company) %>%
 ```
 
 ## EDA
+### General explorations
 A general EDA for the reviews Note that here we treat each company as a document.
 
 ```{r}
@@ -125,10 +126,10 @@ EDA_handler <-
             TF_grouped = FALSE,
             TF_IDF = FALSE,
             word_cloud = FALSE,
-            aggregate_cloud = FALSE) {
+            aggregate_cloud = FALSE,
+            lemma=FALSE) {
     # creating the new column name
     new_col <- paste0(quo_name(enquo(text_column)), "_word")
-    
     # tokenization of the reviews
     review_token <- tidytext::unnest_tokens(
       a_tibble,
@@ -136,18 +137,17 @@ EDA_handler <-
       input = {{text_column}},
       to_lower = TRUE,
       strip_punct = TRUE,
-      strip_numeric = TRUE
-    ) %>%
+      strip_numeric = TRUE) %>%
+      # if the lemmatization option is activated
+      `if`(lemma,{.} %>% mutate(word = lemmatize_strings(word)),.) %>%
       # removing the stop words
       anti_join(., stop_words, by = "word") %>%
       rename(., !!(new_col) := "word")
-    
     # looking at the most frequent words
     freq <- review_token %>%
       group_by(company) %>%   # grouping is also possible also with review_id
       count("{{text_column}}_word" := get(new_col), sort = TRUE) %>%
       ungroup()
-    
     # computing the TF-IDF if the option is set as TRUE
     if (TF_IDF == TRUE) {
       reviews_TF_IDF <- tidytext::bind_tf_idf(
@@ -157,24 +157,21 @@ EDA_handler <-
         n = n
       )
     }
-    
     # indexing for the top n words and also if it was a TFI-IDF then use that
     # for the index instead of the the typical frequency table
     index <-
       `if`(TF_IDF, reviews_TF_IDF, freq) %>%
       `if`(TF_grouped, {.} %>% group_by(company), .) %>%
       top_n(n_top)
-    
     # creating a function to be used for the ggplot aesthetics
     fix_lables <- function (a_column) {
       stri_replace_all_fixed(a_column, c("_", "s"), c(" ", ""), vectorize_all = FALSE)
     }
-    
     # designing a ggplot for the most frequent words
     freq_plt <-
       `if`(TF_IDF, reviews_TF_IDF, freq) %>%
       filter(get(new_col) %in% (index %>% pull(get(new_col)))) %>%
-      ggplot(aes(x = get(new_col), y = `if`(TF_IDF, tf_idf, n))) + 
+      ggplot(aes(x = get(new_col), y = `if`(TF_IDF, tf_idf, n), fill= get(new_col))) + 
       geom_col() + 
       coord_flip() + 
       facet_grid( ~ company) + 
@@ -191,7 +188,7 @@ EDA_handler <-
     # creating wordcloud if the option is set equal to TRUE
     if (word_cloud == TRUE) {
       set.seed(1234)
-      dev.new(width = 1000, height = 1000, unit = "px")
+      # dev.new(width = 1000, height = 1000, unit = "px")
       #many warnings are generated on this which is normal
       if (aggregate_cloud == TRUE) {
         freq_agg <- aggregate(as.formula(paste("n", "~", new_col, sep= " "))
@@ -211,19 +208,32 @@ EDA_handler <-
     # generating the output
     output <-
       list(
-        "Removing_stopwords" = review_token,
+        review_token,
+        # "Remove_stopwords" = review_token,
         "Most_frequent_words" = freq,
-        if(exists("clouds")){"Word_cloud" = clouds},
+        # if(exists("clouds")){"Word_cloud" = clouds},
         "Plotting_most_frequent_words" = freq_plt
       )
     
-    return (output)
+    # we also add the wordcloud if available
+    if(word_cloud==TRUE){
+      clouds <- list("Word_cloud"=clouds)
+      output <- append(output,clouds)
+      }
+    
+    # changing the name of the object based on the option given
+    names(output)[1] <-
+      `if`(lemma,"Remove_stopwords_make_lemma","Remove_stopwords")
+
+    return(output)
   }
+
+EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
 
 
 # TF approach
-pros_tf <- EDA_handler(bank_reviews, employer_pros)
-cons_tf <- EDA_handler(bank_reviews, employer_cons)
+pros_tf <- EDA_handler(bank_reviews, employer_pros, lemma=TRUE)
+cons_tf <- EDA_handler(bank_reviews, employer_cons, lemma=TRUE)
 
 
 # TF_IDF approach
@@ -233,28 +243,23 @@ cons_tf_idf <- EDA_handler(bank_reviews, employer_cons, n_top = 1,TF_grouped= TR
 # The grouped and specific to each document --> Only one word is shown which is quite strange and requires more investigation
 pros_grouped <- EDA_handler(bank_reviews, employer_pros, n_top = 1, TF_grouped= TRUE)
 
-# Finally, for the wordcloud, firstly it takes a while to render and then, there are two problems with it, a) it does not generate the word management for cons and b, if outputs as `null` all the time, for that to be resolved, ggwordcloud library could be used as explained by the code below.
+# generating word cloud, note that you always get `null` in the output which
+# is because based on base graphics and the side effect of drawing to the current graphics device.
 pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = TRUE)
 
-# aggregated wordcloud can also be produced.
-pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE)
+# generating aggregated wordcloud
+pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
 
-# what more to be done?
-# try with lemmatization approach
-# lexical diversity
-# compute keynesses
+cons_cloudy_aggregated <- EDA_handler(bank_reviews, employer_cons, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
+
+# note: in the rmarkdown approach you may have a warning that management could not fit on the screen, this is normal and in case it occurred a picture has to be posted of this.
 ```
 
 The ggplot represents the most frequent words per company as the grouping was not done on the review but the company itself.
 
 Regarding the pros, most often the words `benefit` and `people` come up, it is also interesting to see that the words `culture`, and `life` are also there perhaps indicating that most people care about these values when trying to describe work positively.
 
-We can see that the most cons were associated with the word `management`. This is followed by `employees`, `hour` and `time`. Furthermore we have the same `people` word in the cons meaning that we would have to put our analysis into contenxt and use the valence shifters to see if they mention something good about people or bad about these people.
-
-See wordcloud 2 with the tm package from here https://towardsdatascience.com/create-a-word-cloud-with-r-bde3e7422e8a
-library(wordcloud2)
-
-<!-- See on average how many words each review contains -->
+We can see that the most cons were associated with the word `management`. This is followed by `employees`, `hour` and `time`. Furthermore we have the same `people` word in the cons meaning that we would have to put our analysis into context and use the valence sifters to see if they mention something good about people or bad about these people.
 
 Also `quanteda` library could be used if needed..
 
@@ -262,69 +267,125 @@ Also `quanteda` library could be used if needed..
 pros_corpus <- bank_reviews %>% select(company, review_id, employer_pros) %>% corpus(text_field = "employer_pros")
 ```
 
-
-
-Trying out some things with sentiment analysis and dictionaries.
+### Semantic Analysis
+Sentiment analysis with the two dictionaries of `nrc` and `afinn`.
 
 ```{r}
-pro_sentiments <- pros_tf$Removing_stopwords %>% rename(word= employer_pros_word)
-
-con_sentiments <- cons_tf$Removing_stopwords %>% rename(word= employer_cons_word)
-
-
 # Dictionaries for categories
 get_sentiments("nrc")
-
-crude_sentiment <- pro_sentiments %>% inner_join(get_sentiments("nrc"))
-
-crude_sentiment %>% group_by(company, sentiment) %>%  summarize(n = n()) %>% 
-  mutate(freq = n / sum(n)) %>% ggplot(aes(x = sentiment, y = freq, fill = sentiment)) + 
-  geom_bar(stat = "identity", alpha = 0.8) + 
-  facet_wrap(~ company) + coord_flip()
 
 # Dictionaries by values
 get_sentiments("afinn")
 
+# Use the lemmatized words and join them with a dictionary of choice
+dicti_senti <-
+  function (a_tf_object,
+            a_dictionary,
+            a_plot = FALSE) {
+    # Using the tf matrix and removing the stop words
+    tf_no_stop <- {
+      a_tf_object
+    }[[1]] %>%
+      rename(word = contains("word")) #pro or con word
+    
+    # nrc option
+    if (a_dictionary == "nrc") {
+      nrc_sentiment <-
+        tf_no_stop %>% inner_join(get_sentiments("nrc"))
+      if (a_plot == TRUE) {
+        plt <-
+          nrc_sentiment %>%
+          group_by(company, sentiment) %>%
+          summarize(n = n()) %>%
+          mutate(freq = n / sum(n)) %>%
+          ggplot(aes(x = sentiment, y = freq, fill = sentiment)) +
+          geom_bar(stat = "identity", alpha = 0.8) +
+          facet_wrap(~ company) +
+          coord_flip()
+      }
+      # in case a plot was requested we return it otherwise we just return the
+      # sentiment output
+      out<-
+        tryCatch(
+        expr = {
+          output_nrc <-
+            list("nrc_sentiments" = nrc_sentiment, "plot_of_nrc" = plt)
+          return(output_nrc)
+        },
+        error = function(e) {
+          return(nrc_sentiment)
+        }
+      )
+      return(out) #if this is not done, then it'll return a null 
+      # when a plot is not used
+    }
+    # afinn option
+    if (a_dictionary == "afinn") {
+      afinn_sentiment <-
+        tf_no_stop %>% inner_join(get_sentiments("afinn"))
+      if (a_plot == TRUE) {
+        aggregated_measure <-
+          aggregate(value ~ company, data = afinn_sentiment, FUN = mean)
+        plt <-
+          aggregated_measure %>% 
+          ggplot(aes(x = company, y = value, fill = company)) +
+          geom_bar(stat = "identity") +
+          coord_flip()
+      }
+      # applying the same logic as before
+      tryCatch(
+        expr = {
+          output_afinn <-
+            list("afinn_sentiments" = afinn_sentiment,
+                 "plot_of_afinn" = plt,
+                 "aggregated_measure"=aggregated_measure)
+          return(output_afinn)
+        },
+        error = function(e) {
+          return(afinn_sentiment)
+        }
+      )
+    }
+  }
 
-# Creating the lemmatization
-pro_sentiments %<>% mutate(word_lemma = textstem::lemmatize_strings(word))
- 
-con_sentiments %<>% mutate(word_lemma = textstem::lemmatize_strings(word))
 
-values <-  pro_sentiments %>% inner_join(get_sentiments("afinn"))
+# looking at nrc pros and cons separately
+pos_nrc_sem <- dicti_senti(pros_tf, a_dictionary = "nrc", a_plot=TRUE)
+neg_nrc_sem <- dicti_senti(cons_tf, a_dictionary = "nrc", a_plot=TRUE)
 
-con_values <- con_sentiments %>% inner_join(get_sentiments("afinn"))
+# we can also combine the two reviews and look at them in that way
+make_wider <- function(a_tibble) {
+  a_tibble$Remove_stopwords_make_lemma %>% pivot_longer(
+    cols = contains("word"),
+    names_to = "type_of_review",
+    names_pattern = "employer_(\\D+)s",
+    values_to = "word"
+  )
+}
 
-# Looking at the values generated
-aggregate(value~company, data=values, FUN=mean) %>% 
-  ggplot(aes(x = company, y = value)) + 
-  geom_bar(stat = "identity") + coord_flip()
+nrc_combined <- bind_rows(make_wider(pros_tf), make_wider(cons_tf))
 
+# applying it to the combined set of reviews
+dicti_senti(list(nrc_combined), a_dictionary = "nrc", a_plot=TRUE)
 
-# Mean employer rating existing in the raw data
-existing_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% arrange(desc(employer_rating))
+# doing the same with the afinn dictionary 
+pos_afinn_sem <- dicti_senti(pros_tf, a_dictionary = "afinn", a_plot=TRUE)
+neg_afinn_sem <- dicti_senti(cons_tf, a_dictionary = "afinn", a_plot=TRUE)
 
-# Highest semantic (positive)install
-pos_sem <- aggregate(value~company, data=values, FUN=mean)  %>% 
-  arrange(desc(value))
-
-# Highest semantic (negative)
-neg_sem <- aggregate(value~company, data=con_values, FUN=mean)  %>% 
-  arrange(desc(value))
-
-# Both semantics combined
-scores_compared <- pos_sem %>% left_join(neg_sem, by = "company") %>% 
-  mutate(afiin_senti_score = value.x+value.y) %>% 
+# computing the total for afiin, we add positives to negative semantics. 
+scores_compared <- pos_afinn_sem$aggregated_measure %>% 
+  left_join(neg_afinn_sem$aggregated_measure, by = "company") %>% 
+  mutate(afinn_senti_score = value.x+value.y) %>% 
+  arrange(desc(afinn_senti_score)) %>%
   select(-c(2,3))
-
-# Comparing the two scores
-existing_score %>% left_join(scores_compared) %>% arrange(desc(2))
 ```
+
+Some interpetaiton --> To be completed...the fact that the feelings for the banks are very close to one another for the `nrc` method are close to one another whereas for the 
 
 More advanced methods with valence shifters.
 
 ```{r}
-# Here we add the scores of the reviews
+# Here we add the scores of the reviews which is more custom to our purpose
 val_shifter <- function (a_tibble){
   object_1 <- a_tibble %>%
     dplyr::mutate(pros = get_sentences(employer_pros)) %$%
@@ -345,54 +406,23 @@ val_shifter <- function (a_tibble){
   return(average_score)
   }
 
+# Applying the function to the bank reviews
 valence_score<-val_shifter(bank_reviews)
 
-# Comparing the two scores
-actual_score <- aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% 
+# calculating the actual score they have given to each company
+actual_score <- 
+  aggregate(employer_rating~company, data=bank_reviews, FUN=mean) %>% 
   arrange(desc(employer_rating))
 
-existing_score %>% 
+# Comparing the score of valence shifter vs the basic numerical sentiment
+actual_score %>% 
   left_join(valence_score,by = "company") %>% 
   left_join(scores_compared,by = "company") %>%
   rename(actual_employer_rating = employer_rating) %>% 
   arrange(desc(2)) %>% kable_maker()
 ```
 
-Trial with other packages to see the results of other dictionaries.
-
-```{r}
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load_gh("trinker/sentimentr", "trinker/stansent", "sfeuerriegel/SentimentAnalysis", "wrathematics/meanr")
-pacman::p_load(syuzhet, qdap, microbenchmark, RSentiment)
-install.packages("qdap")
-
-bank.trial <- bank_reviews[sample(nrow(bank_reviews), 200),]
-ase <- bank.trial$employer_pros %>% get_sentences()
-
-bank.trial
-
-syuzhet <- setNames(as.data.frame(lapply(c("syuzhet", "bing", "afinn", "nrc"),
-    function(x) get_sentiment(ase, method=x))), c("jockers", "bing", "afinn", "nrc"))
-
-SentimentAnalysis <- apply(analyzeSentiment(ase)[c('SentimentGI', 'SentimentLM', 'SentimentQDAP') ], 2, round, 2)
-colnames(SentimentAnalysis) <- gsub('^Sentiment', "SA_", colnames(SentimentAnalysis))
-
-left_j(data.frame(
-    stanford = sentiment_stanford(ase)[["sentiment"]],
-    sentimentr_jockers_rinker = round(sentiment(ase, question.weight = 0)[["sentiment"]], 2),
-    sentimentr_jockers = round(sentiment(ase, lexicon::hash_sentiment_jockers, question.weight = 0)[["sentiment"]], 2),    
-    sentimentr_huliu = round(sentiment(ase, lexicon::hash_sentiment_huliu, question.weight = 0)[["sentiment"]], 2),    
-    sentimentr_sentiword = round(sentiment(ase, lexicon::hash_sentiment_sentiword, question.weight = 0)[["sentiment"]], 2),    
-    RSentiment = calculate_score(ase), 
-    SentimentAnalysis,
-    meanr = score(ase)[['score']],
-    syuzhet,
-    sentences = ase,
-    stringsAsFactors = FALSE
-), "sentences")
-
-```
-
+We get a score that 4/5 times the sentiment corresponds to the actual score, and more importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead.
 
 
 

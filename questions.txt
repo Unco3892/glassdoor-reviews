@@ -1,7 +1,0 @@
-What is `na` in the words.
-
-Reorder based on the counts.
-
-What to do next: TF-IDF and the word cloud
-
-Verify that the review id's are unique.
