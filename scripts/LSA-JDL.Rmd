@@ -11,16 +11,12 @@ source(here::here("scripts/setup.R"))
 library(lexicon)
 library(ngram)
 library(ranger)
+```
 
+
+```{r setup, include=FALSE}
 # Importing the data
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
-
-# # Adding word count column for pos
-# bank_reviews$wcount.pos <- unlist(lapply(bank_reviews$employer_cons, wordcount))
-# 
-# # Keeping only review with more than 5 words
-# bank_reviews_clean <- bank_reviews %>%
-#   filter(wcount.pos > 5)
 
 # Corpus creation for pros
 corpus.pros <- corpus(x = bank_reviews,
@@ -32,64 +28,204 @@ corpus.cons <- corpus(x = bank_reviews,
 ```
 
 ```{r}
-# token for pros
+# tokens for pros
 tokens.pros <- tokens(corpus.pros, 
                         remove_punct = TRUE, 
                         remove_symbols = TRUE, 
                         remove_url = TRUE) %>% 
   tokens_tolower() %>% tokens_wordstem() %>%
-  tokens_remove(stopwords("english")) 
+  tokens_remove(c("bank","ubs", "jpmorgan", "hsbc","td","deutsche" ,"#name", "good", "great", stopwords("english")))
 
-# token for cons
+
+# tokens for cons
 tokens.cons <- tokens(corpus.cons, 
                         remove_punct = TRUE, 
                         remove_symbols = TRUE, 
                         remove_url = TRUE) %>% 
   tokens_tolower() %>% tokens_wordstem() %>%
-  tokens_remove(stopwords("english")) 
-
-# tfidf pros
-tfidf.pros <- dfm_tfidf(dfm(tokens.pros))
-
-# tfidf cons
-tfidf.cons <- dfm_tfidf(dfm(tokens.cons))
+  tokens_remove(c("bank","ubs", "jpmorgan", "hsbc","td","deutsche" ,"#name", "good", "great", stopwords("english")))
 ```
 
 
-# Random Forest
+```{r}
+#Plotting
+hist(ntoken(tokens.pros), breaks = 200)
+
+hist(ntoken(tokens.cons), breaks = 200)
+```
+
+
+```{r}
+# Keeping reviews with more than a certain number of token for pros & cons
+min.token <- 10
+
+tokens.pros.clean <- tokens.pros %>%
+  tokens_subset(ntoken(tokens.pros) > min.token & ntoken(tokens.cons) > min.token)
+
+tokens.cons.clean <- tokens.cons %>%
+  tokens_subset(ntoken(tokens.cons) > min.token & ntoken(tokens.pros) > min.token)
+```
+
+
+```{r}
+# dfm pros
+dfm.pros <- dfm(tokens.pros.clean)
+
+# dfm cos
+dfm.cons <- dfm(tokens.cons.clean)
+
+# tfidf pros
+tfidf.pros <- dfm_tfidf(dfm.pros)
+
+# tfidf cons
+tfidf.cons <- dfm_tfidf(dfm.cons)
+```
+
 
 ```{r}
 # Retriving the ratings
-y <- docvars(tokens.cons, "employer_rating")
+y <- docvars(tokens.pros.clean, "employer_rating")
 
 # Selecting the candidates for the number of dimensions
-nd.vec <- c(5, 10, 15, 20, 25, 30)
+nd.vec <- c(3,5,10,20,30)
 
-# Creating a result matrix
-rmse.rf <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
-rownames(rmse.rf) <- nd.vec
-colnames(rmse.rf) <- nd.vec
-
-# Creating Training Set
+# Creating the training Set
 set.seed(123)
 index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
+```
+
+
+# DTM
+```{r}
+# Creating a result matrix for lm
+rmse.lm.dtm <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.lm.dtm) <- nd.vec
+colnames(rmse.lm.dtm) <- nd.vec
+
+# Creating a result matrix for rf
+rmse.rf.dtm <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.rf.dtm) <- nd.vec
+colnames(rmse.rf.dtm) <- nd.vec
 
 # Compute the RMSE for each combination of #Topic for pros and cons
 for (i in 1:length(nd.vec)){
   for (j in 1:length(nd.vec)){
   
+  #LSA
+  lsa.pros <- textmodel_lsa(dfm.pros, nd=nd.vec[i])
+  lsa.cons <- textmodel_lsa(dfm.cons, nd=nd.vec[j])
+  df <- data.frame(Score=y, X1=lsa.pros$docs, X2=lsa.cons$docs)
+  df.tr <- df[index.tr,]
+  df.te <- df[-index.tr,]
+  
+  #LM
+  reviews.lm <- lm(Score ~ .,
+                   data = df.tr)
+  pred.lm <- predict(reviews.lm, df.te)
+  pred.lm <- pmin(5, predict(reviews.lm, df.te))
+  rmse.lm.dtm[i, j] <- sqrt(mean((pred.lm - df.te$Score) ^ 2)) 
+  
+  #RF
+  reviews.rf <- ranger(Score ~ .,
+                       data = df.tr)
+  pred.rf <- predict(reviews.rf, df.te)$predictions
+  rmse.rf.dtm[i, j] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
+  }
+}
+
+min(rmse.rf.dtm)
+```
+
+# TFIDF
+
+```{r}
+# Creating a result matrix for ls
+rmse.lm.tfidf <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.lm.tfidf) <- nd.vec
+colnames(rmse.lm.tfidf) <- nd.vec
+
+# Creating a result matrix for rf
+rmse.rf.tfidf <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.rf.tfidf) <- nd.vec
+colnames(rmse.rf.tfidf) <- nd.vec
+
+# Compute the RMSE for each combination of #Topic for pros and cons
+for (i in 1:length(nd.vec)){
+  for (j in 1:length(nd.vec)){
+  
+  #LSA
   lsa.pros <- textmodel_lsa(tfidf.pros, nd=nd.vec[i])
   lsa.cons <- textmodel_lsa(tfidf.cons, nd=nd.vec[j])
   df <- data.frame(Score=y, X1=lsa.pros$docs, X2=lsa.cons$docs)
   df.tr <- df[index.tr,]
   df.te <- df[-index.tr,]
-
-  reviews.rf <- ranger(Score ~ ., 
-                      data = df.tr)
-pred.te <- predict(reviews.rf, df.te)$predictions
-rmse.rf[i,j] <- sqrt(mean((pred.te - df.te$Score)^2))
-}
+  
+  #LM
+  reviews.lm <- lm(Score ~ .,
+                   data = df.tr)
+  pred.lm <- predict(reviews.lm, df.te)
+  pred.lm <- pmin(5, predict(reviews.lm, df.te))
+  rmse.lm.tfidf[i, j] <- sqrt(mean((pred.lm - df.te$Score) ^ 2)) 
+  
+  #RF
+  reviews.rf <- ranger(Score ~ .,
+                       data = df.tr)
+  pred.rf <- predict(reviews.rf, df.te)$predictions
+  rmse.rf.tfidf[i, j] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
+  }
 }
 ```
 
+Best model 
+```{r}
+lsa.pros <- textmodel_lsa(tfidf.pros, nd = 30)
+lsa.cons <- textmodel_lsa(tfidf.cons, nd = 20)
+df <- data.frame(Score = y,
+                 X1 = lsa.pros$docs,
+                 X2 = lsa.cons$docs)
+df.tr <- df[index.tr, ]
+df.te <- df[-index.tr, ]
+
+#RF
+reviews.rf <- ranger(Score ~ .,
+                     data = df.tr,
+                     importance = "impurity")
+pred.rf <- predict(reviews.rf, df.te)$predictions
+```
+
+Topic importance
+
+```{r}
+reviews.rf$variable.importance
+
+
+imp <- data.frame(keyName=names(reviews.rf$variable.importance), value=reviews.rf$variable.importance, row.names=NULL)
+
+imp$type[1:50] <- "pros"
+imp$type[31:50] <- "cons"
+```
+
+
+```{r}
+imp %>%
+  mutate(name = fct_reorder(keyName, value)) %>%
+  ggplot(aes(x = name, y = value, fill = type)) +
+  geom_bar(stat = "identity",
+           alpha = .6,
+           width = .4) +
+  coord_flip() +
+  xlab("") +
+  ylab("impurity") +
+  theme_bw()
+```
+
+```{r}
+topic16 <- data.frame(keyName = names(
+  lsa.pros$features[, 16]),
+  value = lsa.pros$features[, 16],
+  row.names = NULL
+)
+
+topic16 %>% arrange(value)
+```
 
