@@ -81,19 +81,19 @@ bank_reviews %>%
 # calculating the mean number of words
 mean_words_cal <- function(a_word_column) {
   mean(sapply(strsplit(
-    as.character(a_word_column), "[[:space:]]+"
+    as.character(a_word_column), "[[:space:]]"
   ), length))
 }
 
 median_words_cal <- function(a_word_column) {
   median(sapply(strsplit(
-    as.character(a_word_column), "[[:space:]]+"
+    as.character(a_word_column), "[[:space:]]"
   ), length))
 }
 
 quantile_fun <- function(a_word_column,a_quantile) {
   quantile(sapply(strsplit(
-    as.character(a_word_column), "[[:space:]]+"
+    as.character(a_word_column), "[[:space:]]"
   ), length), a_quantile, na.rm = TRUE)
 }
 
@@ -111,6 +111,7 @@ bank_reviews %>% group_by(company) %>%
   gather(metric, val, 2:ncol(.)) %>%
   spread(company, val) %>% 
   kable_maker()
+
 ```
 
 ## EDA
