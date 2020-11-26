@@ -1,0 +1,398 @@
+---
+title: "Embedding-JDL"
+output: html_document
+---
+
+
+```{r , include=FALSE}
+# Loading packages and knitr options
+source(here::here("scripts/setup.R"))
+
+library(lexicon)
+library(ngram)
+library(ranger)
+```
+
+
+```{r, include=FALSE}
+# Importing the data
+bank_reviews <-
+  read_csv(here::here("data/Bank_reviews_processed.csv")) %>%
+  filter(!duplicated(review_id)) %>%
+  dplyr::mutate(
+    pro_sen_score = sentimentr::sentiment_by(text.var = get_sentences(employer_pros))$ave_sentiment,
+    # we did not use the sentiment function as it gave some recycling issues. We use get_sentences to avoid warnings but it is not necessary
+    cons_sen_score = sentimentr::sentiment_by(get_sentences(employer_cons))$ave_sentiment,
+    pro_w_count = str_count(employer_pros, '\\w+'),
+    pro_w_cons = str_count(employer_cons, '\\w+')
+  )
+
+# Corpus creation for pros
+corpus.pros <- corpus(x = bank_reviews,
+                      text_field = c("employer_pros"))
+
+# Corpus creation for pros
+corpus.cons <- corpus(x = bank_reviews,
+                      text_field = c("employer_cons"))
+```
+
+```{r}
+# tokens for pros
+tokens.pros <- quanteda::tokens(
+  corpus.pros,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE
+) %>%
+  tokens_tolower() %>%
+  # ilia modified this to lemmatization
+  # tokens_wordstem() %>%
+  tokens_remove(
+    c(
+      "bank",
+      "ubs",
+      "jpmorgan",
+      "hsbc",
+      "td",
+      "deutsche" ,
+      "#name",
+      "good",
+      "great",
+      stopwords("english")
+    )
+  ) %>%
+  tokens_replace(pattern = hash_lemmas$token, replacement = hash_lemmas$lemma)
+
+
+# tokens for cons
+tokens.cons <- quanteda::tokens(
+  corpus.cons,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE
+) %>%
+  tokens_tolower() %>%   tokens_remove(
+    c(
+      "bank",
+      "ubs",
+      "jpmorgan",
+      "hsbc",
+      "td",
+      "deutsche" ,
+      "#name",
+      "good",
+      "great",
+      stopwords("english")
+    )
+  ) %>%
+  tokens_replace(pattern = hash_lemmas$token, replacement = hash_lemmas$lemma)
+
+
+```
+
+
+```{r}
+#Plotting
+hist(ntoken(tokens.pros), breaks = 200)
+
+hist(ntoken(tokens.cons), breaks = 200)
+```
+
+
+```{r}
+# Keeping reviews with more than a certain number of token for pros & cons
+min.token <- 10
+
+tokens.pros.clean <- tokens.pros %>%
+  tokens_subset(ntoken(tokens.pros) > min.token & ntoken(tokens.cons) > min.token)
+
+tokens.cons.clean <- tokens.cons %>%
+  tokens_subset(ntoken(tokens.cons) > min.token & ntoken(tokens.pros) > min.token)
+```
+
+
+```{r}
+# dfm pros
+dfm.pros <- dfm(tokens.pros.clean)
+
+# dfm cos
+dfm.cons <- dfm(tokens.cons.clean)
+
+# tfidf pros
+tfidf.pros <- dfm_tfidf(dfm.pros)
+
+# tfidf cons
+tfidf.cons <- dfm_tfidf(dfm.cons)
+```
+
+
+```{r}
+# Retriving the ratings
+y <- docvars(tokens.pros.clean, "employer_rating")
+
+# Selecting the candidates for the number of dimensions
+nd.vec <- c(5,20,30,50)
+
+# Creating the training Set
+set.seed(123)
+index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
+```
+
+
+# DTM
+```{r}
+# Creating a result matrix for lm
+rmse.lm.dtm <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.lm.dtm) <- nd.vec
+colnames(rmse.lm.dtm) <- nd.vec
+
+# Creating a result matrix for rf
+rmse.rf.dtm <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.rf.dtm) <- nd.vec
+colnames(rmse.rf.dtm) <- nd.vec
+
+# Compute the RMSE for each combination of #Topic for pros and cons
+for (i in 1:length(nd.vec)){
+  for (j in 1:length(nd.vec)){
+  
+  #LSA
+  lsa.pros <- textmodel_lsa(dfm.pros, nd=nd.vec[i])
+  lsa.cons <- textmodel_lsa(dfm.cons, nd=nd.vec[j])
+  df <- data.frame(Score=y, X1=lsa.pros$docs, X2=lsa.cons$docs)
+  df.tr <- df[index.tr,]
+  df.te <- df[-index.tr,]
+  
+  #LM
+  reviews.lm <- lm(Score ~ .,
+                   data = df.tr)
+  pred.lm <- predict(reviews.lm, df.te)
+  pred.lm <- pmin(5, predict(reviews.lm, df.te))
+  rmse.lm.dtm[i, j] <- sqrt(mean((pred.lm - df.te$Score) ^ 2)) 
+  
+  #RF
+  reviews.rf <- ranger(Score ~ .,
+                       data = df.tr)
+  pred.rf <- predict(reviews.rf, df.te)$predictions
+  rmse.rf.dtm[i, j] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
+  }
+}
+
+min(rmse.lm.dtm)
+min(rmse.rf.dtm)
+```
+
+# TFIDF
+
+```{r}
+# Creating a result matrix for ls
+rmse.lm.tfidf <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.lm.tfidf) <- nd.vec
+colnames(rmse.lm.tfidf) <- nd.vec
+
+# Creating a result matrix for rf
+rmse.rf.tfidf <- matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.rf.tfidf) <- nd.vec
+colnames(rmse.rf.tfidf) <- nd.vec
+
+# Compute the RMSE for each combination of #Topic for pros and cons
+for (i in 1:length(nd.vec)){
+  for (j in 1:length(nd.vec)){
+  
+  #LSA
+  lsa.pros <- textmodel_lsa(tfidf.pros, nd=nd.vec[i])
+  lsa.cons <- textmodel_lsa(tfidf.cons, nd=nd.vec[j])
+  df <- data.frame(Score=y, X1=lsa.pros$docs, X2=lsa.cons$docs)
+  df.tr <- df[index.tr,]
+  df.te <- df[-index.tr,]
+  
+  #LM
+  reviews.lm <- lm(Score ~ .,
+                   data = df.tr)
+  pred.lm <- predict(reviews.lm, df.te)
+  pred.lm <- pmin(5, predict(reviews.lm, df.te))
+  rmse.lm.tfidf[i, j] <- sqrt(mean((pred.lm - df.te$Score) ^ 2))
+
+  #RF
+  reviews.rf <- ranger(Score ~ .,
+                       data = df.tr)
+  pred.rf <- predict(reviews.rf, df.te)$predictions
+  rmse.rf.tfidf[i, j] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
+  }
+}
+
+min(rmse.lm.tfidf)
+min(rmse.rf.tfidf)
+```
+
+Could add the valence shifters to the combination as well as the log count for the cons.
+
+Best model 
+```{r}
+lsa.pros <- textmodel_lsa(tfidf.pros, nd = 20)
+# lsa.cons <- textmodel_lsa(tfidf.cons, nd = 20)
+# Even better for the cons to be 30
+lsa.cons <- textmodel_lsa(tfidf.cons, nd = 50)
+df <- data.frame(Score = y,
+                 X1 = lsa.pros$docs,
+                 X2 = lsa.cons$docs)
+                 # val_shift_score = docvars(reviews_tokenized,c("total_score"))),
+                 # log_total_counts=docvars(reviews_tokenized, c("log_total_counts")))
+
+df.tr <- df[index.tr, ]
+df.te <- df[-index.tr, ]
+
+#RF
+reviews.rf <- ranger(Score ~ .,
+                     data = df.tr,
+                     importance = "impurity")
+pred.rf <- predict(reviews.rf, df.te)$predictions
+
+
+rmse <- sqrt(mean((pred.rf - df.te$Score)^2))
+rmse
+# 0.991 however it does not look as good as the LSA one
+plot(pred.rf ~ df.te$Score, ylab="Predictions", xlab="Observed", pch=20)
+```
+We can also the valence shifter and the long length of the reviews to it.
+
+```{r}
+
+
+
+```
+
+
+
+## Word Embedding & Glove
+Here we will also try to model using embedding and glove
+
+```{r}
+# with embedding for pros
+tokens.pros.clean_fcm <- fcm(
+  tokens.pros.clean,
+  context = "window",
+  count = "weighted",
+  window = 5,
+  weights = 1 / (1:5),
+  tri = FALSE
+)
+
+# with embedding for cons
+tokens.cons.clean_fcm <- fcm(
+  tokens.cons.clean,
+  context = "window",
+  count = "weighted",
+  window = 5,
+  weights = 1 / (1:5),
+  tri = FALSE
+)
+
+# Selecting the candidates for the number of embedding dimensions
+# nd.vec <- c(5,50,100)
+nd.vec <- c(2,3)
+
+# Creating a result matrix for rf
+rmse.rf.tfidf <-
+  matrix(nrow = length(nd.vec), ncol = length(nd.vec))
+rownames(rmse.rf.tfidf) <- nd.vec
+colnames(rmse.rf.tfidf) <- nd.vec
+
+# Compute the RMSE for each combination of #Topic for pros and cons
+for (i in 1:length(nd.vec)) {
+  for (j in 1:length(nd.vec)) {
+    # Giving dimensions to the embedding
+    glove_pros <- GlobalVectors$new(rank = nd.vec[i], x_max = 1)
+    glove_cons <- GlobalVectors$new(rank = nd.vec[j], x_max = 1)
+    
+    # fitting the model, with the targets in mind
+    word_vectors_main_pro <-
+      glove_pros$fit_transform(tokens.pros.clean_fcm, n_iter = 100)
+    word_vectors_main_cons <-
+      glove_cons$fit_transform(tokens.cons.clean_fcm, n_iter = 100)
+    
+    # Taking out the context of the model
+    word_vectors_context_pros <- glove_pros$components
+    word_vectors_context_cons <- glove_cons$components
+    
+    # Adding the target + transpose of the context words
+    reviews_glove_pro <-
+      word_vectors_main_pro + t(word_vectors_context_pros)
+    reviews_glove_con <-
+      word_vectors_main_cons + t(word_vectors_context_cons)
+    
+    # number of documents which is the same for both
+    ndoc <- length(tokens.pros)
+    
+    # looking at the centers of pros and cons
+    centers_pros <-
+      matrix(nr = ndoc, nc = nd.vec[i]) # document embedding matrix
+    centers_cons <-
+      matrix(nr = ndoc, nc = nd.vec[j]) # document embedding matrix
+    
+    for (f in 1:ndoc) {
+      words_in_f_p <- reviews_glove_pro[tokens.pros[[f]], ,drop= FALSE]
+      centers_pros[f, ] <- apply(words_in_f_p, 2, mean)
+    }
+    
+    for (h in 1:ndoc) {
+      words_in_f_c <- reviews_glove_con[tokens.cons[[h]], , drop = FALSE]
+      centers_cons[h, ] <- apply(words_in_f_c, 2, mean)
+    }
+    # changing the rowname to the document name, in this case text+number
+    row.names(centers_pros) <- names(tokens.pros)
+    row.names(centers_cons) <- names(tokens.cons)
+    
+    df <-
+      data.frame(Score = y, X1 = centers_pros, X2 = centers_cons)
+    df.tr <- df[index.tr,]
+    df.te <- df[-index.tr,]
+    
+    #RF
+    reviews.rf <- ranger(Score ~ .,
+                         data = df.tr)
+    pred.rf <- predict(reviews.rf, df.te)$predictions
+    rmse.rf.tfidf[i, j] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
+  }
+}
+
+
+min(rmse.rf.dtm)
+```
+
+
+Topic importance
+
+```{r}
+reviews.rf$variable.importance
+
+
+imp <- data.frame(keyName=names(reviews.rf$variable.importance), value=reviews.rf$variable.importance, row.names=NULL)
+
+imp$type[1:50] <- "pros"
+imp$type[31:50] <- "cons"
+```
+
+
+```{r}
+imp %>%
+  mutate(name = fct_reorder(keyName, value)) %>%
+  ggplot(aes(x = name, y = value, fill = type)) +
+  geom_bar(stat = "identity",
+           alpha = .6,
+           width = .4) +
+  coord_flip() +
+  xlab("") +
+  ylab("impurity") +
+  theme_bw()
+```
+
+```{r}
+topic16 <- data.frame(keyName = names(
+  lsa.pros$features[, 16]),
+  value = lsa.pros$features[, 16],
+  row.names = NULL
+)
+
+topic16 %>% arrange(value)
+```
+

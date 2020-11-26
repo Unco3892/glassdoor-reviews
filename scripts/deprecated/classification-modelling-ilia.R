@@ -59,7 +59,7 @@ fcm <- fcm(
   tri = FALSE
 )
 
-glove <- GlobalVectors$new(rank = 100, x_max = 1)
+glove <- GlobalVectors$new(rank = 10, x_max = 1)
 
 word_vectors_main <- glove$fit_transform(fcm, n_iter = 100)
 
@@ -69,11 +69,13 @@ reviews_glove <- word_vectors_main + t(word_vectors_context)
 
 ndoc <- length(reviews_tokenized) # number of documents
 centers <-
-  matrix(nr = ndoc, nc = 100) # document embedding matrix (1 document per row)
+  matrix(nr = ndoc, nc = 10) # document embedding matrix (1 document per row)
+
 for (i in 1:ndoc) {
   words_in_i <- reviews_glove[reviews_tokenized[[i]], , drop = FALSE]
   centers[i,] <- apply(words_in_i, 2, mean)
 }
+
 row.names(centers) <- names(reviews_tokenized)
 
 y <- factor(docvars(reviews_tokenized, "employer_rating"))

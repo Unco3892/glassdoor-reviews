@@ -12,7 +12,13 @@
 # LDA would also be useful
 # May need more cleaning for good great and so on
 
+min.token <- 20
 
+reviews_tokenized %<>% 
+  tokens_remove(c("bank","ubs", "jpmorgan", "hsbc","td","deutsche" ,"#name", "good", "great"))%>%
+  tokens_subset(ntoken(reviews_tokenized) > min.token)
+
+# Keeping reviews with more than a certain number of token for pros & cons
 y <- docvars(reviews_tokenized, "employer_rating")
 
 reviews_tfidf <- dfm_tfidf(dfm(reviews_tokenized))
