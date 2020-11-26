@@ -57,7 +57,7 @@ hist(ntoken(tokens.cons), breaks = 200)
 
 ```{r}
 # Keeping reviews with more than a certain number of token for pros & cons
-min.token <- 10
+min.token <- 5
 
 tokens.pros.clean <- tokens.pros %>%
   tokens_subset(ntoken(tokens.pros) > min.token & ntoken(tokens.cons) > min.token)
@@ -92,6 +92,11 @@ nd.vec <- c(3,5,10,20,30)
 # Creating the training Set
 set.seed(123)
 index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
+```
+
+
+```{r}
+hist(y)
 ```
 
 
@@ -181,8 +186,8 @@ Best model
 lsa.pros <- textmodel_lsa(tfidf.pros, nd = 30)
 lsa.cons <- textmodel_lsa(tfidf.cons, nd = 20)
 df <- data.frame(Score = y,
-                 X1 = lsa.pros$docs,
-                 X2 = lsa.cons$docs)
+                 Pos = lsa.pros$docs,
+                 Cons = lsa.cons$docs)
 df.tr <- df[index.tr, ]
 df.te <- df[-index.tr, ]
 
@@ -191,6 +196,14 @@ reviews.rf <- ranger(Score ~ .,
                      data = df.tr,
                      importance = "impurity")
 pred.rf <- predict(reviews.rf, df.te)$predictions
+```
+
+```{r}
+plot(pred.rf ~ df.te$Score, ylab="Predictions", xlab="Observed", pch=20)
+```
+
+```{r}
+hist(pred.rf)
 ```
 
 Topic importance
@@ -220,12 +233,44 @@ imp %>%
 ```
 
 ```{r}
-topic16 <- data.frame(keyName = names(
-  lsa.pros$features[, 16]),
-  value = lsa.pros$features[, 16],
+topic12_words <- data.frame(keyName = names(
+  lsa.pros$features[, 12]),
+  value = lsa.pros$features[, 12],
   row.names = NULL
 )
 
-topic16 %>% arrange(value)
+topic12_words %>% arrange(desc(abs(value)))
+
 ```
+
+
+```{r}
+topic12_text <- data.frame(keyName = names(
+  lsa.pros$docs[, 12]),
+  value = lsa.pros$docs[, 12],
+  row.names = NULL
+)
+
+topic12_text %>% arrange(value)
+
+topic12_text %>% arrange(desc(value))
+
+
+
+
+# most 2 associated to the topic
+docvars(corpus.cons[7833])$employer_pros
+
+docvars(corpus.cons[8839])$employer_pros
+
+# least associated to topic
+docvars(corpus.cons[12171])$employer_pros
+```
+
+Questions :
+Balancing the Data
+RMSE vs Accuracy
+Impurity for understanding the topics
+Interpretation of most important topics??
+
 
