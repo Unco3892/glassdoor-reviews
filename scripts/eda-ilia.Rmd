@@ -333,6 +333,7 @@ dicti_senti <-
           geom_bar(stat = "identity") +
           coord_flip()
       }
+      
       # applying the same logic as before
       tryCatch(
         expr = {
@@ -383,7 +384,97 @@ scores_compared <- pos_afinn_sem$aggregated_measure %>%
 
 Some interpetaiton --> To be completed...the fact that the feelings for the banks are very close to one another for the `nrc` method are close to one another whereas for the 
 
-More advanced methods with valence shifters.
+
+Semantic analysis using valence shifters
+```{r, message=FALSE}
+# library(tidyverse)
+# library(tidytext)
+# library(readr)
+
+# We need to create one vector/bank which contain all the review
+# I create a function, however, it should be possible to do it using nest function (dplyr), but laziness
+
+# We create a function that extract each review and aggregate them in one vector
+merge.review.pro <- function(.Data, companyname) {
+  .Data %>%
+    filter(company == companyname) %>%
+    select(employer_pros) %>%
+    str_c(sep = " ", collapse = TRUE)
+}
+
+merge.review.con <- function(.Data, companyname) {
+  .Data %>%
+    filter(company == companyname) %>%
+    select(employer_cons) %>%
+    str_c(sep = " ", collapse = TRUE)
+}
+
+# We iterate this function for each bank
+company.name <- unique(bank_reviews$company)
+reviews.bank.pro <- c("", "", "", "", "")
+reviews.bank.con <- c("", "", "", "", "")
+
+for (i in 1:length(company.name)) {
+  reviews.bank.pro[i] <-
+    merge.review.pro(bank_reviews, company.name[i])
+}
+
+for (i in 1:length(company.name)) {
+  reviews.bank.con[i] <-
+    merge.review.con(bank_reviews, company.name[i])
+}
+
+# We merge the prosand cons together and prepare the corpus
+reviews.bank <- paste(reviews.bank.pro, reviews.bank.con, sep = "")
+review.cp <- corpus(reviews.bank)
+
+# We tokenize and assign the sentiment dictionnary to every pertinent token
+review.tk <-
+  review.cp %>% quanteda::tokens(
+    remove_numbers = TRUE,
+    remove_punct = TRUE,
+    remove_symbols = TRUE,
+    remove_separators = TRUE
+  ) %>%
+  tokens_tolower() %>%
+  tokens_replace(pattern = hash_lemmas$token, replacement = hash_lemmas$lemma) %>%
+  tokens_remove(stopwords("english"))
+
+review.sent <-
+  tokens_lookup(review.tk, dictionary = data_dictionary_LSD2015) %>%
+  dfm() %>%
+  tidy()
+
+# We replace the name of docs by the company name
+company.df <- t(t(company.name))
+review.sent$document <- rbind(company.df, company.df)
+
+# We scale the data to have comparable results
+review.sent.scale <- review.sent %>%
+  group_by(document) %>%
+  mutate (factor = 100 / sum(count)) %>%
+  mutate(percent = (count * factor) / 100)
+
+# We plot the results
+review.sent %>% ggplot(aes(x = document, y = count, fill = term)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(title = "Sentiment Analysis (absolute value)", fill = "")
+
+# We plot the results
+review.sent.scale %>% ggplot(aes(x = document, y = percent, fill = term)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(title = "Sentiment Analysis (relative value)", fill = "")
+```
+We observe that the dictionnary recognize a larger proportion of positive words. However, JP.Morgan and HSBC employees seems to have expressed less sentiment in their reviews. To be able to compare results, we scale the sentiment analysis and observe that the proportion of negative/positive review for each bank seems equal, although we can notice a slight negative trend for DB.
+
+
+### More advanced methods with valence shifters.
 
 ```{r}
 # Here we add the scores of the reviews which is more custom to our purpose
@@ -425,8 +516,133 @@ actual_score %>%
 
 We get a score that 4/5 times the sentiment corresponds to the actual score, and more importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead.
 
+### Job positions analysis
+```{r, message=FALSE}
+
+# We select and clean variable employee_role
+clean.bank.review <-
+  separate(
+    data = bank_reviews,
+    col = employee_role,
+    into = c(NA, "employee_role"),
+    sep = "\\-"
+  )
+
+jobs.corpus <- corpus(x = clean.bank.review ,
+                      text_field = c("employee_role"))
+
+jobs.tokens <- quanteda::tokens(
+  jobs.corpus,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  what = "sentence"
+)
+
+jobs.dfm <- dfm(jobs.tokens) # create dfm
+jobs.dfm$company <- bank_reviews$company
+jobs.dfm <- dfm_group(jobs.dfm, groups = "company") %>% 
+  dfm_sort(decreasing=TRUE)
+
+# We filter the unapropriate terms
+to.be.removed <- c(" anonymous employee",
+          " teller ii",
+          " teller i" ,
+          " vice president",
+          " assistant vice president",
+          " director",
+          " associate director"
+          )
+jobs.dfm <- jobs.dfm %>% dfm_remove(to.be.removed)
+jobs.dfm <- jobs.dfm[,1:50] #sort dfm by only keeping most used term for better display
+
+# We display position frequency by bank
+
+jobs.freq <- textstat_frequency(jobs.dfm,groups = "company")
+index.jobs <- jobs.freq 
+
+jobs.freq %>%
+  arrange(desc(frequency)) %>%
+  filter(rank<=5) %>%
+  ggplot(aes(x=feature, y=frequency)) + 
+  geom_col() + 
+  coord_flip() +
+  facet_wrap(~group, ncol = 3) +
+  labs(title="Top 5 most frequent position for each bank") + xlab("") +ylab("")
+
+# Representation of the job position on the biplot
+tmod <- textmodel_lsa(jobs.dfm, nd = 3)
+
+biplot(
+  y = tmod$docs[, 2:3],
+  x = tmod$features[, 2:3],
+  col = c("grey", "red"),
+  xlab = "Dim 2",
+  ylab = "Dim 3",
+  cex=0.8
+)
+
+```
+We have also explored the job positions to potentially identify patterns. After removing unaccurate job-title, we observe on the top 5 most frequent position per bank that some position seems more specific for one's bank. For instance, UBS seems to hire a larger number of interns for its operations.
+
+To have a more interpretable insight and using LSA techniques, we manage to biplot in 2 dimensions the top 50 job positions. Interestingly, JP Morgan, HSBC and UBS seem to have a similar job structure. On the other, TD offers more position related to representant (customer oriented), whereas DB hire more analysts.
+
+### Compare the reviews in terms of lexical diversity
+```{r}
+
+#corpus for the pros
+reviews.corpus.pro <- corpus(x = bank_reviews,
+                             text_field = c("employer_pros"))
+
+### tokenization
+library(lavaan)
+
+#Romain: no need for word1 argument, as we are not concerned by symbols or whatever.
+reviews.tokens.pro <- quanteda::tokens(reviews.corpus.pro, 
+                        remove_punct = TRUE, 
+                        remove_symbols = TRUE, 
+                        what="word")
+
+# We decide to remove words that won't bring additional information, such as the name of the bank, etc.
+to.be.removed <- c("ubs","jp","chase","td","morgan","hsbc","deutsche","db","jpmc","j.p","jpmorgan")
+
+#Use of lemmitization
+reviews.tokens.pro <- tokens_tolower(reviews.tokens.pro) %>% tokens_replace(pattern=hash_lemmas$token, replacement = hash_lemmas$lemma) %>% tokens_remove(c(stopwords("english"),to.be.removed))
+
+reviews.pro.dfm <- dfm(reviews.tokens.pro)
+reviews.company <-bank_reviews$company
+reviews.pro.dfm$company <-reviews.company
+reviews.bank.pro.dfm<-dfm_group(reviews.pro.dfm,groups = "company")
+
+#frequency per terms
+reviews.bank.pro.freq <- textstat_frequency(reviews.bank.pro.dfm,groups = "company")
+
+#tf_idf
+reviews.bank.pro.dfm.tfidf<-dfm_tfidf(reviews.bank.pro.dfm)
+
+textstat_lexdiv(reviews.bank.pro.dfm,
+                measure = "I") %>%
+  ggplot(aes(x = reorder(document, I), y = I)) +
+  geom_point() +
+  coord_flip() +
+  xlab("Text") +
+  ylab("Yule's index")
+
+textstat_lexdiv(reviews.bank.pro.dfm,
+                measure = "TTR") %>%
+  ggplot(aes(x = reorder(document, TTR), y = TTR)) +
+  geom_point() +
+  coord_flip() +
+  xlab("Text") +
+  ylab("TTR's index")
 
 
-
+textstat_lexdiv(reviews.bank.pro.dfm,
+                measure = "MATTR") %>%
+  ggplot(aes(x = reorder(document, MATTR), y = MATTR)) +
+  geom_point() +
+  coord_flip() +
+  xlab("Text") +
+  ylab("MATTR's index")
+```
 
 
