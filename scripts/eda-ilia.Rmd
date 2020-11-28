@@ -636,13 +636,13 @@ textstat_lexdiv(reviews.bank.pro.dfm,
   ylab("TTR's index")
 
 
-textstat_lexdiv(reviews.bank.pro.dfm,
-                measure = "MATTR") %>%
-  ggplot(aes(x = reorder(document, MATTR), y = MATTR)) +
-  geom_point() +
-  coord_flip() +
-  xlab("Text") +
-  ylab("MATTR's index")
+# textstat_lexdiv(reviews.bank.pro.dfm,
+#                 measure = "MATTR") %>%
+#   ggplot(aes(x = reorder(document, MATTR), y = MATTR)) +
+#   geom_point() +
+#   coord_flip() +
+#   xlab("Text") +
+#   ylab("MATTR's index")
 ```
 
 
