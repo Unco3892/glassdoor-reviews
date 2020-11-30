@@ -1,0 +1,189 @@
+---
+title: "LDA-JDL"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+# Loading packages and knitr options
+source(here::here("scripts/setup.R"))
+
+library(lexicon)
+library(ngram)
+library(ranger)
+library(topicmodels)
+library(tidytext)
+```
+
+
+```{r setup, include=FALSE}
+# Importing the data
+bank_reviews <-
+  read_csv(here::here("data/Bank_reviews_processed.csv")) %>%
+  filter(!duplicated(review_id))
+
+# Corpus creation for pros
+corpus.pros <- corpus(x = bank_reviews,
+                             text_field = c("employer_pros"))
+
+# Corpus creation for pros
+corpus.cons <- corpus(x = bank_reviews,
+                             text_field = c("employer_cons"))
+```
+
+```{r}
+# Tokens to remove
+tokens_to_remove <- c(
+      "bank",
+      "ubs",
+      "jpmorgan",
+      "hsbc",
+      "td",
+      "deutsche" ,
+      "#name",
+      "good",
+      "great",
+      "work",
+      "company",
+      "can",
+      "lot",
+      "much",
+      "get")
+
+# tokens for pros
+tokens.pros <- quanteda::tokens(
+  corpus.pros,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_separators=TRUE
+) %>%
+  tokens_tolower() %>%
+  tokens_replace(pattern=hash_lemmas$token, replacement = hash_lemmas$lemma) %>%
+  tokens_remove(c(tokens_to_remove, stopwords("english")))
+
+# tokens for cons
+tokens.cons <- quanteda::tokens(
+  corpus.cons,
+  remove_punct = TRUE,
+  remove_symbols = TRUE,
+  remove_url = TRUE,
+  remove_separators=TRUE
+) %>%
+  tokens_tolower() %>%
+  tokens_replace(pattern=hash_lemmas$token, replacement = hash_lemmas$lemma) %>%
+  tokens_remove(c(tokens_to_remove, stopwords("english")))
+```
+
+
+```{r}
+# Keeping reviews with more than a certain number of token for pros & cons
+min.token <- 10
+
+tokens.pros.clean <- tokens.pros %>%
+  tokens_subset(ntoken(tokens.pros) > min.token & ntoken(tokens.cons) > min.token)
+
+tokens.cons.clean <- tokens.cons %>%
+  tokens_subset(ntoken(tokens.cons) > min.token & ntoken(tokens.pros) > min.token)
+```
+
+```{r}
+# dfm pros
+dfm.pros <- dfm(tokens.pros.clean)
+
+# dfm cos
+dfm.cons <- dfm(tokens.cons.clean)
+```
+
+
+```{r}
+## convert quateda object to topicmodels object
+K <- 3
+pros.dtm <- convert(dfm.pros, to = "topicmodels")
+lda.pros <- LDA(pros.dtm, k = K)
+
+cons.dtm <- convert(dfm.cons, to = "topicmodels")
+lda.cons <- LDA(cons.dtm, k = K)
+```
+
+```{r}
+beta.pros <- tidy(lda.pros, matrix = "beta")
+
+beta.pros.top.terms <- beta.pros %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+beta.pros.top.terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+```
+
+
+```{r}
+# Retriving the company
+company <- data.frame(cbind(docnames(dfm.pros), docvars(tokens.pros.clean, "company")), stringsAsFactors = FALSE)
+
+company <- company %>%
+  rename(document = X1,
+         company = X2)
+```
+
+
+```{r}
+gamma.pros <- tidy(lda.pros, matrix = "gamma")
+
+
+gamma.pros %>%
+  left_join(company) %>%
+  group_by(company, topic) %>%
+  summarize(gamma = mean(gamma)) %>%
+  ggplot(aes(company, gamma, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+```
+
+
+```{r}
+beta.cons <- tidy(lda.cons, matrix = "beta")
+
+beta.cons.top.terms <- beta.cons %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+beta.cons.top.terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+```
+
+
+```{r}
+gamma.cons <- tidy(lda.cons, matrix = "gamma")
+
+
+gamma.cons %>%
+  left_join(company) %>%
+  group_by(company, topic) %>%
+  summarize(gamma = mean(gamma)) %>%
+  ggplot(aes(company, gamma, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+```
+
+
+
