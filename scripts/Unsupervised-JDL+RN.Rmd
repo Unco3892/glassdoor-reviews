@@ -31,6 +31,9 @@ corpus.cons <- corpus(x = bank_reviews,
                              text_field = c("employer_cons"))
 ```
 
+
+Expliquer quels token on remove
+
 ```{r}
 # Tokens to remove
 tokens_to_remove <- c(
@@ -48,7 +51,8 @@ tokens_to_remove <- c(
       "can",
       "lot",
       "much",
-      "get")
+      "get",
+      "job")
 
 # tokens for pros
 tokens.pros <- quanteda::tokens(
@@ -75,10 +79,10 @@ tokens.cons <- quanteda::tokens(
   tokens_remove(c(tokens_to_remove, stopwords("english")))
 ```
 
-
+On garde les reviews avec minimum 5 token
 ```{r}
 # Keeping reviews with more than a certain number of token for pros & cons
-min.token <- 10
+min.token <- 5
 
 tokens.pros.clean <- tokens.pros %>%
   tokens_subset(ntoken(tokens.pros) > min.token & ntoken(tokens.cons) > min.token)
@@ -95,7 +99,7 @@ dfm.pros <- dfm(tokens.pros.clean)
 dfm.cons <- dfm(tokens.cons.clean)
 ```
 
-
+Tester le nmb de dimensions
 ```{r}
 ## convert quateda object to topicmodels object
 K <- 3
@@ -126,32 +130,6 @@ beta.pros.top.terms %>%
 
 
 ```{r}
-# Retriving the company
-company <- data.frame(cbind(docnames(dfm.pros), docvars(tokens.pros.clean, "company")), stringsAsFactors = FALSE)
-
-company <- company %>%
-  rename(document = X1,
-         company = X2)
-```
-
-
-```{r}
-gamma.pros <- tidy(lda.pros, matrix = "gamma")
-
-
-gamma.pros %>%
-  left_join(company) %>%
-  group_by(company, topic) %>%
-  summarize(gamma = mean(gamma)) %>%
-  ggplot(aes(company, gamma, fill = factor(topic))) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~ topic, scales = "free") +
-  coord_flip() +
-  scale_x_reordered()
-```
-
-
-```{r}
 beta.cons <- tidy(lda.cons, matrix = "beta")
 
 beta.cons.top.terms <- beta.cons %>%
@@ -169,8 +147,32 @@ beta.cons.top.terms %>%
   scale_x_reordered()
 ```
 
-
 ```{r}
+# Retriving the company
+company <- data.frame(cbind(docnames(dfm.pros), docvars(tokens.pros.clean, "company")), stringsAsFactors = FALSE)
+
+company <- company %>%
+  rename(document = X1,
+         company = X2)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+gamma.pros <- tidy(lda.pros, matrix = "gamma")
+
+gamma.pros %>%
+  left_join(company) %>%
+  group_by(company, topic) %>%
+  summarize(gamma = mean(gamma)) %>%
+  ggplot(aes(company, gamma, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+```
+
+
+```{r, warning=FALSE, message=FALSE}
 gamma.cons <- tidy(lda.cons, matrix = "gamma")
 
 
