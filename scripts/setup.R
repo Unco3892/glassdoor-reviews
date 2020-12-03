@@ -23,6 +23,7 @@ packages <- c(
   "sentimentr",
   "lexicon",
   "textstem",
+  "text2vec",
   # for plotting
   "knitr",
   "kableExtra",
