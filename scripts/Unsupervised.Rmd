@@ -38,10 +38,10 @@ Expliquer quels token on remove
 # Tokens to remove
 tokens_to_remove <- c(
       "bank",
-      "ubs",
-      "jpmorgan",
-      "hsbc",
-      "td",
+      #"ubs",
+      #"jpmorgan",
+      #"hsbc",
+      #"td",
       "deutsche" ,
       "#name",
       "good",
