@@ -32,6 +32,13 @@ corpus.cons <- corpus(x = bank_reviews,
 ```
 
 
+```{r,echo=FALSE}
+#The output shows that 429 reviews are duplicated
+# We will remove these rows
+bank_reviews %<>%
+  filter(!duplicated(review_id))
+```
+
 Expliquer quels token on remove
 
 ```{r}

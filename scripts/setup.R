@@ -74,8 +74,9 @@ opts_chunk$set(
 # creating function for a nice kable
 kable_maker <- function(a_tibble, ...) {
   a_tibble %>%
-    kable(longtable = TRUE, align = 'l', ...) %>%
-    kable_styling(bootstrap_options = c("striped", "hover")) %>%
+    kable(longtable = TRUE, ...) %>%
+    kable_styling(bootstrap_options = c("striped", "hover"),position = "center",
+                  font_size = 14) %>%
     `if`((nrow(a_tibble) > 5 | ncol(a_tibble) > 5), (.) %>% scroll_box(height = "500px"), .)
 }
 

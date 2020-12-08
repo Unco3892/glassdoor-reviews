@@ -12,29 +12,32 @@ bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 
 ```
 
+# Exploratory Data Analysis
+
 ## Definitions
 
 `Corpus` = All reviews on GlassDoor for five major banks
 `Text` = Reviews for each bank --> Used this also as the `Document`
 `Tokens` = Words in each review
 
-### Data structure
+## Data structure
 
 ```{r}
-bank_reviews %>% glimpse
+bank_reviews %>% kable_head()
 ```
 
 The dataset consists of `r length(unique(bank_reviews$company))` banks which are `r unique(bank_reviews$company) %>% paste(.,collapse = ", ")`.
 
-We can summarize the information for each bank.
 
-NOTE TO ilia: Replace the function below with an across as summarize_if is deprecated.
+## Checking for NAs and duplicates.
 
-Checking for NAs and duplicates.
+```{r,echo=FALSE}
+freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",
+                                      col.names=c("Number of missing values","%")) 
+```
 
+For unknown reasons, some reviews seem to have been duplicated. We remove these instances
 ```{r}
-freq.na(bank_reviews)
-
 sum(duplicated(bank_reviews$review_id)) #The output shows that 429 reviews are duplicated, let's check them
 
 # All the row's who values are duplicated
@@ -56,8 +59,8 @@ bank_reviews %>% filter(review_id == "empReview_38099527")
 ```
 
 
-```{r}
-# General overview
+## General overview
+```{r, warning=FALSE, message=FALSE}
 bank_reviews %>%
   select(company, employer_rating:senior_management) %>%
   group_by(company) %>%
@@ -65,18 +68,21 @@ bank_reviews %>%
   summarize_if(is.numeric,
                c(
                  "mean" = function(x)
-                   mean(x, na.rm = TRUE),
-                 "median" = function(x)
-                   median(x, na.rm = TRUE)
+                   mean(x, na.rm = TRUE)
+                 # "median" = function(x)
+                 #   median(x, na.rm = TRUE)
                )) %>%
-  relocate(company, n_median) %>%
-  rename("number of reviews" = n_median) %>%
-  kable_maker()
-
-# An alternative shorter approach
-# bank_reviews %>% 
-#   dplyr::count(company, name = "number of reviews") %>% 
-#   kable_maker()
+  # relocate(company, n_median) %>%
+  # rename("number of reviews" = n_median) %>%
+  kable_maker(col.names=c("Metric",
+                          "Number of reviews",
+                          "Rating",
+                          "Work life balance",
+                          "Culture values",
+                          "Diversity inclusion",
+                          "Career Opportunities",
+                          "Compensations and benefits",
+                          "Senior management"),caption="Overview of average scores")
 
 # calculating the mean number of words
 mean_words_cal <- function(a_word_column) {

@@ -13,6 +13,12 @@ library(ngram)
 library(ranger)
 ```
 
+```{r,echo=FALSE}
+#The output shows that 429 reviews are duplicated
+# We will remove these rows
+bank_reviews %<>%
+  filter(!duplicated(review_id))
+```
 
 ```{r, include=FALSE}
 # Importing the data
