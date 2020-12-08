@@ -326,6 +326,19 @@ cons.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
 
 this topic seems to be related to the collegues.
 
+```{r}
+pros.3 <- data.frame(keyName = names(
+  lsa.pros$features[, 3]),
+  value = lsa.pros$features[, 3],
+  row.names = NULL
+)
+
+pros.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
+  arrange(desc(value))
+```
+
+this topic seems to be related to the holidays and days off
+
 ## Word Embedding & Glove
 Here we will also try to model using embedding and glove
 
