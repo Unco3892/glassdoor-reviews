@@ -159,21 +159,24 @@ e<-bank_reviews %>%
   geom_col() +
   ylab("Number of reviews") +
   xlab("Number of words") +
-  labs(title="Pros")
+  labs(title="Pros")+
+  geom_vline(xintercept = 10)
 
 f<-bank_reviews %>%
   mutate(word=count_words_cal(employer_cons)) %>%
-  group_by(word) %>%
-  summarise(n=n()) %>%
+  group_by(company,word) %>%
+  summarise(n=n(),company) %>%
   filter(word<50) %>%
   ggplot(aes(x=word,y=n)) +
   geom_col() +
   ylab("") +
   xlab("Number of words") +
-  labs(title="Cons")
+  labs(title="Cons") +
+  geom_vline(xintercept = 10)
 
 ggarrange(e,f,
           ncol=2,nrow=1)
+
 
 ```
 
@@ -304,7 +307,7 @@ EDA_handler <-
 ```
 
 
-```{r, echo=FALSE,message=FALSE}
+```{r, echo=FALSE,message=FALSE, fig.asp=1}
 EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
 
 # TF approach

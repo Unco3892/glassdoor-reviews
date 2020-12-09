@@ -11,6 +11,9 @@ source(here::here("scripts/setup.R"))
 library(lexicon)
 library(ngram)
 library(ranger)
+
+# Importing the data
+bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 ```
 
 ```{r,echo=FALSE}
@@ -21,9 +24,6 @@ bank_reviews %<>%
 ```
 
 ```{r, include=FALSE}
-# Importing the data
-bank_reviews <-
-  read_csv(here::here("data/Bank_reviews_processed.csv"))
 
 # Apply a filter to remove the duplicated entries and also add sentiments separately for pros and con which we will combine later. The word count was also added
 bank_reviews %<>%
@@ -194,10 +194,10 @@ for (i in 1:nrow(results_lsa_tfidf)){
   topic.pros = lsa.pros$docs,
   topic.cons = lsa.cons$docs,
   total_sen_score = rowSums(docvars(
-    tokens.pros.clean, c("pro_sen_score", "cons_sen_score")))
-    # total_word_count = rowMeans(docvars(
-    #     tokens.pros.clean, c("pros_w_count", "cons_w_count")
-  )
+    tokens.pros.clean, c("pro_sen_score", "cons_sen_score"))),
+    total_word_count = rowSums(log10(docvars(
+        tokens.pros.clean, c("pros_w_count", "cons_w_count"))
+  )))
   
   df.tr <- df[index.tr,]
   df.te <- df[-index.tr,]
@@ -238,7 +238,7 @@ results_lsa %>%
 # worst models : 
 results_lsa %>%
   top_n(10, RMSE) %>%
-  arrange(desc(RMSE))
+  arrange(RMSE)
 ```
 
 
