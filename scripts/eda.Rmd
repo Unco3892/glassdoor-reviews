@@ -28,8 +28,9 @@ bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 bank_reviews %>% kable_head()
 ```
 
-The dataset consists of `r length(unique(bank_reviews$company))` banks which are `r unique(bank_reviews$company) %>% paste(.,collapse = ", ")`.
-
+<br />
+The dataset consists of `r length(unique(bank_reviews$company))` banks which are `r unique(bank_reviews$company) %>% paste(.,collapse = ", ")`. We also remark that employer rating is always filled, but this is not true for the other ratings, such as work life balance, that employee choose or not to answer.
+<br />
 
 ### Checking for NAs and duplicates.
 
@@ -38,13 +39,16 @@ freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",
                                       col.names=c("Number of missing values","%")) 
 ```
 
+<br />
+As mentionned above, not all ratings are mandatory to be filled, for example the diversity inclusion is mostly not considered. This indicates that we wont be able to use all of these variables for further classifiation tasks.
+<br />
 
-```{r }
+```{r, echo=FALSE, results='hide'}
 #sum(duplicated(bank_reviews$review_id)) #The output shows that 429 reviews are duplicated, let's check them
 
 # All the row's who values are duplicated
-# bank_reviews %>%
-#   filter(duplicated(review_id))
+bank_reviews %>%
+filter(duplicated(review_id))
 
 # These are all the duplicated values
 bank_reviews %>% group_by(review_id) %>% filter(n()>1) %>% ungroup() %>% kable_head()
@@ -59,7 +63,10 @@ bank_reviews %<>%
 # We confirm that the duplicates are no longer there
 #bank_reviews %>% filter(review_id == "empReview_38099527")
 ```
-For unknown reasons, some reviews seem to have been duplicated. We remove these instances using filter.
+
+<br />
+For unknown reasons, some reviews seem to have been duplicated, approximatively 429. We remove these instances from our dataset to ensure its good quality. 
+<br />
 
 ### General overview
 ```{r, warning=FALSE, message=FALSE}
@@ -85,7 +92,10 @@ bank_reviews %>%
                           "Career Opportunities",
                           "Compensations and benefits",
                           "Senior management"),caption="Overview of average scores")
+```
 
+
+```{r, warning=FALSE, message=FALSE}
 # calculating the mean number of words
 # mean_words_cal <- function(a_word_column) {
 #   mean(sapply(strsplit(
@@ -129,6 +139,48 @@ bank_reviews %>% group_by(company) %>%
   kable_maker(caption="Pros and cons review word length: comparison between banks")
 
 ```
+
+<br />
+Regarding the number of words per bank for the reviews, we cannot identify interesting patterns. If we look at the median and the mean number of words for cons reviews, we do not find similar results compared to the scores. It would have been interesting to see that longer cons reviews are correlated with bad score, as angry employees would emphasize the negative points of the company instead of the positive, but this is not the case here.
+<br />
+
+```{r fig3, fig.width = 6, fig.asp = .72,out.width = "75%"}
+
+count_words_cal <- function(a_word_column) {
+  sapply(str_count(as.character(a_word_column), '\\w+'), sum)
+}
+
+e<-bank_reviews %>%
+  mutate(word=count_words_cal(employer_pros)) %>%
+  group_by(word) %>%
+  summarise(n=n()) %>%
+  filter(word<50) %>%
+  ggplot(aes(x=word,y=n)) +
+  geom_col() +
+  ylab("Number of reviews") +
+  xlab("Number of words") +
+  labs(title="Pros")
+
+f<-bank_reviews %>%
+  mutate(word=count_words_cal(employer_cons)) %>%
+  group_by(word) %>%
+  summarise(n=n()) %>%
+  filter(word<50) %>%
+  ggplot(aes(x=word,y=n)) +
+  geom_col() +
+  ylab("") +
+  xlab("Number of words") +
+  labs(title="Cons")
+
+ggarrange(e,f,
+          ncol=2,nrow=1)
+
+```
+
+<br />
+Both graphs above clearly show that the number of word per review is quite concentrated around 5-6 words. This result is not surprising, as every new Glassdoor member need to write minimum length pro and con reviews for account validation. Most of them write a very short review.
+<br />
+
 
 ## General explorations
 A general EDA for the reviews. Note that here we treat each company as a document. Our dataset is then composed of 23341 documents.
@@ -325,7 +377,9 @@ dicti_senti <-
           ggplot(aes(x = sentiment, y = freq, fill = sentiment)) +
           geom_bar(stat = "identity", alpha = 0.8) +
           facet_wrap(~ company) +
-          coord_flip()
+          coord_flip() +
+          xlab("") +
+          labs(title="PRO/CON: Sentiment analysis using nrc dictionnary")
       }
       # in case a plot was requested we return it otherwise we just return the
       # sentiment output
@@ -354,7 +408,11 @@ dicti_senti <-
           aggregated_measure %>% 
           ggplot(aes(x = company, y = value, fill = company)) +
           geom_bar(stat = "identity") +
-          coord_flip()
+          coord_flip() +
+          ylab("freq") +
+          xlab("") +
+          labs(title="PRO/CON: Sentiment analysis using Afinn dictionnary",fill="Bank name")
+          
       }
       
       # applying the same logic as before
@@ -391,7 +449,9 @@ make_wider <- function(a_tibble) {
 nrc_combined <- bind_rows(make_wider(pros_tf), make_wider(cons_tf))
 
 # applying it to the combined set of reviews
-dicti_senti(list(nrc_combined), a_dictionary = "nrc", a_plot=TRUE)
+a<-dicti_senti(list(nrc_combined), a_dictionary = "nrc", a_plot=TRUE)
+b<-dicti_senti(list(nrc_combined), a_dictionary = "afinn", a_plot=TRUE)
+
 
 # doing the same with the afinn dictionary 
 pos_afinn_sem <- dicti_senti(pros_tf, a_dictionary = "afinn", a_plot=TRUE)
@@ -403,102 +463,21 @@ scores_compared <- pos_afinn_sem$aggregated_measure %>%
   mutate(afinn_senti_score = value.x+value.y) %>% 
   arrange(desc(afinn_senti_score)) %>%
   select(-c(2,3))
+
+a$plot_of_nrc
 ```
 
-Some interpetaiton --> To be completed...the fact that the feelings for the banks are very close to one another for the `nrc` method are close to one another whereas for the 
+<br />
+The feelings for the banks are very close to one another for the `nrc` method. Unfortunately, we won't be able to use nrc dictionnary for classification.
+<br />
 
-
-### Semantic analysis using valence shifters
-```{r, message=FALSE,warning=FALSE}
-# library(tidyverse)
-# library(tidytext)
-# library(readr)
-
-# We need to create one vector/bank which contain all the review
-# I create a function, however, it should be possible to do it using nest function (dplyr), but laziness
-
-# We create a function that extract each review and aggregate them in one vector
-merge.review.pro <- function(.Data, companyname) {
-  .Data %>%
-    filter(company == companyname) %>%
-    select(employer_pros) %>%
-    str_c(sep = " ", collapse = TRUE)
-}
-
-merge.review.con <- function(.Data, companyname) {
-  .Data %>%
-    filter(company == companyname) %>%
-    select(employer_cons) %>%
-    str_c(sep = " ", collapse = TRUE)
-}
-
-# We iterate this function for each bank
-company.name <- unique(bank_reviews$company)
-reviews.bank.pro <- c("", "", "", "", "")
-reviews.bank.con <- c("", "", "", "", "")
-
-for (i in 1:length(company.name)) {
-  reviews.bank.pro[i] <-
-    merge.review.pro(bank_reviews, company.name[i])
-}
-
-for (i in 1:length(company.name)) {
-  reviews.bank.con[i] <-
-    merge.review.con(bank_reviews, company.name[i])
-}
-
-# We merge the prosand cons together and prepare the corpus
-reviews.bank <- paste(reviews.bank.pro, reviews.bank.con, sep = "")
-review.cp <- corpus(reviews.bank)
-
-# We tokenize and assign the sentiment dictionnary to every pertinent token
-review.tk <-
-  review.cp %>% quanteda::tokens(
-    remove_numbers = TRUE,
-    remove_punct = TRUE,
-    remove_symbols = TRUE,
-    remove_separators = TRUE
-  ) %>%
-  tokens_tolower() %>%
-  tokens_replace(pattern = hash_lemmas$token, replacement = hash_lemmas$lemma) %>%
-  tokens_remove(stopwords("english"))
-
-review.sent <-
-  tokens_lookup(review.tk, dictionary = data_dictionary_LSD2015) %>%
-  dfm() %>%
-  tidy()
-
-# We replace the name of docs by the company name
-company.df <- t(t(company.name))
-review.sent$document <- rbind(company.df, company.df)
-
-# We scale the data to have comparable results
-review.sent.scale <- review.sent %>%
-  group_by(document) %>%
-  mutate (factor = 100 / sum(count)) %>%
-  mutate(percent = (count * factor) / 100)
-
-# We plot the results
-c<-review.sent %>% ggplot(aes(x = document, y = count, fill = term)) +
-  geom_bar(stat = "identity", show.legend = FALSE) +
-  coord_flip() +
-  xlab("") +
-  ylab("") +
-  labs(title = "Sentiment Analysis (absolute value)", fill = "")
-
-# We plot the results
-d<-review.sent.scale %>% ggplot(aes(x = document, y = percent, fill = term)) +
-  geom_bar(stat = "identity") +
-  coord_flip() +
-  xlab("") +
-  ylab("") +
-  labs(title = "Sentiment Analysis (relative value)", fill = "")
-
-ggarrange(c,d,
-          ncol=2,nrow=1)
+```{r}
+b$plot_of_afinn
 ```
-We observe that the dictionnary recognize a larger proportion of positive words. However, JP.Morgan and HSBC employees seems to have expressed less sentiment in their reviews. To be able to compare results, we scale the sentiment analysis and observe that the proportion of negative/positive review for each bank seems equal, although we can notice a slight negative trend for DB.
 
+<br />
+Using Afinn dictionnary, the sentiment analysis seems more promising. It really emphasize the importance of choosing the correct dictionary. The Afinn contains over 3,300+ words with a polarity score associated with each word. 
+<br />
 
 ### More advanced methods with valence shifters.
 
@@ -544,10 +523,13 @@ actual_score %>%
                                                   "Afinn sentiment score"))
 ```
 
-We get a score that 4/5 times the sentiment corresponds to the actual score, and more importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead.
+We get a score that 4/5 times the sentiment corresponds to the actual score. More importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead. Consequently, this new approach of valence shifter score is a good candidate for classification. We choose to integrate it for the supervised learning part.
 
 ### Job positions analysis
-```{r, message=FALSE}
+
+In order to have the most accurate classifier, we need to have a look at every variable available. During the scraping process, we have also managed to extract the job position. It makes sense to have a look at it to see if the employee role has an impact on the company review score.
+
+```{r fig4, out.width = "90%"}
 
 # We select and clean variable employee_role
 clean.bank.review <-
@@ -603,7 +585,7 @@ jobs.freq %>%
 ```
 We have also explored the job positions to potentially identify patterns. After removing unaccurate job-title, we observe on the top 5 most frequent position per bank that some position seems more specific for one's bank. For instance, UBS seems to hire a larger number of interns for its operations.
 
-```{r}
+```{r fig5, out.width = "70%",fig.asp=1.1}
 
 # Representation of the job position on the biplot
 tmod <- textmodel_lsa(jobs.dfm, nd = 3)
@@ -622,7 +604,11 @@ biplot(
 To have a more interpretable insight and using LSA techniques, we manage to biplot in 2 dimensions the top 50 job positions. Interestingly, JP Morgan, HSBC and UBS seem to have a similar job structure. On the other, TD offers more position related to representant (customer oriented), whereas DB hire more analysts.
 
 ### Compare the reviews in terms of lexical diversity
-```{r}
+
+Lexical diversity can also be an interesting tool for classification. However, it seems unlikely to have a usable result here. The only expanation would be that maybe some specific banks hire many more non-english native, who english richness is lower.
+
+
+```{r fig6,fig.width=9,out.width = "90%"}
 
 #corpus for the pros
 reviews.corpus.pro <- corpus(x = bank_reviews,
@@ -681,4 +667,5 @@ ggarrange(a,b,
 #   ylab("MATTR's index")
 ```
 
+We use both Yule's index and TTR's index to demonstrate that they are not candidate for classification. Both graphs tell very diffferents stories, and we cannot correlate these results with the employee_review.
 

@@ -59,7 +59,7 @@ theme_set(theme_light())
 opts_chunk$set(
   comment = "#>",
   collapse = TRUE,
-  # cache = TRUE,
+  cache = TRUE,
   fig.retina = 0.8,
   # figures are either vectors or 300 dpi diagrams
   dpi = 300,
