@@ -12,15 +12,17 @@ bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 
 ```
 
-# Exploratory Data Analysis
+## Preprocessing
 
-## Definitions
+### Definitions
 
 `Corpus` = All reviews on GlassDoor for five major banks
+
 `Text` = Reviews for each bank --> Used this also as the `Document`
+
 `Tokens` = Words in each review
 
-## Data structure
+### Data structure
 
 ```{r}
 bank_reviews %>% kable_head()
@@ -29,7 +31,7 @@ bank_reviews %>% kable_head()
 The dataset consists of `r length(unique(bank_reviews$company))` banks which are `r unique(bank_reviews$company) %>% paste(.,collapse = ", ")`.
 
 
-## Checking for NAs and duplicates.
+### Checking for NAs and duplicates.
 
 ```{r,echo=FALSE}
 freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",
@@ -37,7 +39,7 @@ freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",
 ```
 
 For unknown reasons, some reviews seem to have been duplicated. We remove these instances
-```{r}
+```{r,results='hide'}
 sum(duplicated(bank_reviews$review_id)) #The output shows that 429 reviews are duplicated, let's check them
 
 # All the row's who values are duplicated
@@ -59,7 +61,7 @@ bank_reviews %>% filter(review_id == "empReview_38099527")
 ```
 
 
-## General overview
+### General overview
 ```{r, warning=FALSE, message=FALSE}
 bank_reviews %>%
   select(company, employer_rating:senior_management) %>%
@@ -120,11 +122,16 @@ bank_reviews %>% group_by(company) %>%
 
 ```
 
-## EDA
-### General explorations
-A general EDA for the reviews Note that here we treat each company as a document.
+## General explorations
+A general EDA for the reviews. Note that here we treat each company as a document. Our dataset is then composed of 23341 documents.
 
-```{r}
+
+### Tokenization
+Text Mining results are largely impacted by the tokenization process. After testing differents options, we decide to use the lemmatization as it is the most promising option. 
+
+We create the function EDA_handler, that deals with every aspect of the tokenization. The tokens are split by word and we also remove the stopwords. We also do not want to take into consideration the case and lowercase the tokens.
+
+```{r,message=FALSE,echo=TRUE}
 # creating function to take out the pros and cons of the reviews
 EDA_handler <-
   function (a_tibble,
@@ -234,9 +241,11 @@ EDA_handler <-
 
     return(output)
   }
+```
 
+
+```{r, echo=FALSE,message=FALSE}
 EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
-
 
 # TF approach
 pros_tf <- EDA_handler(bank_reviews, employer_pros, lemma=TRUE)
@@ -277,7 +286,7 @@ pros_corpus <- bank_reviews %>% select(company, review_id, employer_pros) %>% co
 ### Semantic Analysis
 Sentiment analysis with the two dictionaries of `nrc` and `afinn`.
 
-```{r}
+```{r,message=FALSE}
 # Dictionaries for categories
 get_sentiments("nrc")
 
@@ -391,8 +400,8 @@ scores_compared <- pos_afinn_sem$aggregated_measure %>%
 Some interpetaiton --> To be completed...the fact that the feelings for the banks are very close to one another for the `nrc` method are close to one another whereas for the 
 
 
-Semantic analysis using valence shifters
-```{r, message=FALSE}
+### Semantic analysis using valence shifters
+```{r, message=FALSE,warning=FALSE}
 # library(tidyverse)
 # library(tidytext)
 # library(readr)
@@ -575,6 +584,12 @@ jobs.freq %>%
   facet_wrap(~group, ncol = 3) +
   labs(title="Top 5 most frequent position for each bank") + xlab("") +ylab("")
 
+
+```
+We have also explored the job positions to potentially identify patterns. After removing unaccurate job-title, we observe on the top 5 most frequent position per bank that some position seems more specific for one's bank. For instance, UBS seems to hire a larger number of interns for its operations.
+
+```{r}
+
 # Representation of the job position on the biplot
 tmod <- textmodel_lsa(jobs.dfm, nd = 3)
 
@@ -586,9 +601,8 @@ biplot(
   ylab = "Dim 3",
   cex=0.8
 )
-
 ```
-We have also explored the job positions to potentially identify patterns. After removing unaccurate job-title, we observe on the top 5 most frequent position per bank that some position seems more specific for one's bank. For instance, UBS seems to hire a larger number of interns for its operations.
+
 
 To have a more interpretable insight and using LSA techniques, we manage to biplot in 2 dimensions the top 50 job positions. Interestingly, JP Morgan, HSBC and UBS seem to have a similar job structure. On the other, TD offers more position related to representant (customer oriented), whereas DB hire more analysts.
 
@@ -625,23 +639,24 @@ reviews.bank.pro.freq <- textstat_frequency(reviews.bank.pro.dfm,groups = "compa
 #tf_idf
 reviews.bank.pro.dfm.tfidf<-dfm_tfidf(reviews.bank.pro.dfm)
 
-textstat_lexdiv(reviews.bank.pro.dfm,
+a<-textstat_lexdiv(reviews.bank.pro.dfm,
                 measure = "I") %>%
   ggplot(aes(x = reorder(document, I), y = I)) +
   geom_point() +
   coord_flip() +
-  xlab("Text") +
+  xlab("") +
   ylab("Yule's index")
 
-textstat_lexdiv(reviews.bank.pro.dfm,
+b<-textstat_lexdiv(reviews.bank.pro.dfm,
                 measure = "TTR") %>%
   ggplot(aes(x = reorder(document, TTR), y = TTR)) +
   geom_point() +
   coord_flip() +
-  xlab("Text") +
+  xlab("") +
   ylab("TTR's index")
 
-
+ggarrange(a,b,
+          ncol=2,nrow=1)
 # textstat_lexdiv(reviews.bank.pro.dfm,
 #                 measure = "MATTR") %>%
 #   ggplot(aes(x = reorder(document, MATTR), y = MATTR)) +

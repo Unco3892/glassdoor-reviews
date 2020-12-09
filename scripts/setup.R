@@ -30,6 +30,7 @@ packages <- c(
   "wordcloud",
   "RColorBrewer",
   "ggwordcloud",
+  "ggpubr",
   # for the report
   "bookdown",
   "rmarkdown",
@@ -68,7 +69,8 @@ opts_chunk$set(
   fig.asp = 0.618,
   fig.show = "hold",
   message = FALSE,
-  echo = FALSE
+  echo = FALSE,
+  warning = FALSE
 )
 
 # creating function for a nice kable
