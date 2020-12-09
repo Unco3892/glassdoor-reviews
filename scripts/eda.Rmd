@@ -38,28 +38,28 @@ freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",
                                       col.names=c("Number of missing values","%")) 
 ```
 
-For unknown reasons, some reviews seem to have been duplicated. We remove these instances
-```{r,results='hide'}
-sum(duplicated(bank_reviews$review_id)) #The output shows that 429 reviews are duplicated, let's check them
+
+```{r }
+#sum(duplicated(bank_reviews$review_id)) #The output shows that 429 reviews are duplicated, let's check them
 
 # All the row's who values are duplicated
-bank_reviews %>%
-  filter(duplicated(review_id))
+# bank_reviews %>%
+#   filter(duplicated(review_id))
 
 # These are all the duplicated values
-bank_reviews %>% group_by(review_id) %>% filter(n()>1) %>% ungroup()
+bank_reviews %>% group_by(review_id) %>% filter(n()>1) %>% ungroup() %>% kable_head()
 
 # We look at a specific example
-bank_reviews %>% filter(review_id == "empReview_38099527")
+#bank_reviews %>% filter(review_id == "empReview_38099527")
 
 # We will remove these rows
 bank_reviews %<>%
   filter(!duplicated(review_id))
 
 # We confirm that the duplicates are no longer there
-bank_reviews %>% filter(review_id == "empReview_38099527")
+#bank_reviews %>% filter(review_id == "empReview_38099527")
 ```
-
+For unknown reasons, some reviews seem to have been duplicated. We remove these instances using filter.
 
 ### General overview
 ```{r, warning=FALSE, message=FALSE}
@@ -76,7 +76,7 @@ bank_reviews %>%
                )) %>%
   # relocate(company, n_median) %>%
   # rename("number of reviews" = n_median) %>%
-  kable_maker(col.names=c("Metric",
+  kable_maker(col.names=c("Bank name",
                           "Number of reviews",
                           "Rating",
                           "Work life balance",
@@ -87,22 +87,30 @@ bank_reviews %>%
                           "Senior management"),caption="Overview of average scores")
 
 # calculating the mean number of words
+# mean_words_cal <- function(a_word_column) {
+#   mean(sapply(strsplit(
+#     as.character(a_word_column), "[[:space:]]"
+#   ), length))
+# }
+
 mean_words_cal <- function(a_word_column) {
-  mean(sapply(strsplit(
-    as.character(a_word_column), "[[:space:]]"
-  ), length))
+  mean(sapply(str_count(as.character(a_word_column), '\\w+'), sum))
 }
+
+# median_words_cal <- function(a_word_column) {
+#   median(sapply(strsplit(
+#     as.character(a_word_column), "[[:space:]]"
+#   ), length))
+# }
 
 median_words_cal <- function(a_word_column) {
-  median(sapply(strsplit(
-    as.character(a_word_column), "[[:space:]]"
-  ), length))
+  median(sapply(str_count(as.character(a_word_column), '\\w+'), sum))
 }
 
+
+
 quantile_fun <- function(a_word_column,a_quantile) {
-  quantile(sapply(strsplit(
-    as.character(a_word_column), "[[:space:]]"
-  ), length), a_quantile, na.rm = TRUE)
+  quantile(sapply(str_count(as.character(a_word_column), '\\w+'), sum), a_quantile, na.rm = TRUE)
 }
 
 # applying the function to the two word columns
@@ -118,7 +126,7 @@ bank_reviews %>% group_by(company) %>%
   )) %>%
   gather(metric, val, 2:ncol(.)) %>%
   spread(company, val) %>% 
-  kable_maker()
+  kable_maker(caption="Pros and cons review word length: comparison between banks")
 
 ```
 
@@ -471,20 +479,23 @@ review.sent.scale <- review.sent %>%
   mutate(percent = (count * factor) / 100)
 
 # We plot the results
-review.sent %>% ggplot(aes(x = document, y = count, fill = term)) +
-  geom_bar(stat = "identity") +
+c<-review.sent %>% ggplot(aes(x = document, y = count, fill = term)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
   coord_flip() +
   xlab("") +
   ylab("") +
   labs(title = "Sentiment Analysis (absolute value)", fill = "")
 
 # We plot the results
-review.sent.scale %>% ggplot(aes(x = document, y = percent, fill = term)) +
+d<-review.sent.scale %>% ggplot(aes(x = document, y = percent, fill = term)) +
   geom_bar(stat = "identity") +
   coord_flip() +
   xlab("") +
   ylab("") +
   labs(title = "Sentiment Analysis (relative value)", fill = "")
+
+ggarrange(c,d,
+          ncol=2,nrow=1)
 ```
 We observe that the dictionnary recognize a larger proportion of positive words. However, JP.Morgan and HSBC employees seems to have expressed less sentiment in their reviews. To be able to compare results, we scale the sentiment analysis and observe that the proportion of negative/positive review for each bank seems equal, although we can notice a slight negative trend for DB.
 
@@ -526,7 +537,11 @@ actual_score %>%
   left_join(valence_score,by = "company") %>% 
   left_join(scores_compared,by = "company") %>%
   rename(actual_employer_rating = employer_rating) %>% 
-  arrange(desc(2)) %>% kable_maker()
+  arrange(desc(2)) %>% kable_maker(caption="Employer rating: Comparison with 2 sentiment analysis methods",
+                                      col.names=c("Bank name",
+                                                  "Actual employer rating",
+                                                  "Valence shifter score",
+                                                  "Afinn sentiment score"))
 ```
 
 We get a score that 4/5 times the sentiment corresponds to the actual score, and more importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead.
