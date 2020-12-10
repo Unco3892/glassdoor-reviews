@@ -1,5 +1,5 @@
 ---
-title: "LDA-JDL"
+title: "Unsupervised Learning"
 output: html_document
 ---
 
@@ -16,7 +16,7 @@ library(tidytext)
 ```
 
 
-```{r setup, include=FALSE}
+```{r}
 # Importing the data
 bank_reviews <-
   read_csv(here::here("data/Bank_reviews_processed.csv")) %>%
@@ -39,28 +39,19 @@ bank_reviews %<>%
   filter(!duplicated(review_id))
 ```
 
-Expliquer quels token on remove
+### Preprocessing
+We remove the following tokens, because .....
+```{r, echo=TRUE}
+tokens_to_remove <- c(
+      "bank",#"ubs",#"jpmorgan",
+      #"hsbc",#"td","deutsche" ,
+      "#name","good","great",
+      "work","company","can",
+      "lot","much","get","job")
+```
+
 
 ```{r}
-# Tokens to remove
-tokens_to_remove <- c(
-      "bank",
-      #"ubs",
-      #"jpmorgan",
-      #"hsbc",
-      #"td",
-      "deutsche" ,
-      "#name",
-      "good",
-      "great",
-      "work",
-      "company",
-      "can",
-      "lot",
-      "much",
-      "get",
-      "job")
-
 # tokens for pros
 tokens.pros <- quanteda::tokens(
   corpus.pros,
@@ -86,8 +77,8 @@ tokens.cons <- quanteda::tokens(
   tokens_remove(c(tokens_to_remove, stopwords("english")))
 ```
 
-On garde les reviews avec minimum 5 token
-```{r}
+On garde les reviews avec minimum 5 token, because ....
+```{r, echo=TRUE}
 # Keeping reviews with more than a certain number of token for pros & cons
 min.token <- 5
 
@@ -106,6 +97,8 @@ dfm.pros <- dfm(tokens.pros.clean)
 dfm.cons <- dfm(tokens.cons.clean)
 ```
 
+### Dimensions testing
+
 Tester le nmb de dimensions
 ```{r}
 ## convert quateda object to topicmodels object
@@ -116,6 +109,8 @@ lda.pros <- LDA(pros.dtm, k = K)
 cons.dtm <- convert(dfm.cons, to = "topicmodels")
 lda.cons <- LDA(cons.dtm, k = K)
 ```
+
+### Latent dirichlet allocation
 
 ```{r}
 beta.pros <- tidy(lda.pros, matrix = "beta")
@@ -132,7 +127,9 @@ beta.pros.top.terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
-  scale_x_reordered()
+  scale_x_reordered() +
+  xlab("") +
+  labs(title="3 dimensions: Top 10 terms for PROS")
 ```
 
 
@@ -151,7 +148,9 @@ beta.cons.top.terms %>%
   geom_col(show.legend = FALSE) +
   facet_wrap(~ topic, scales = "free") +
   coord_flip() +
-  scale_x_reordered()
+  scale_x_reordered() +
+  xlab("") +
+  labs(title="3 dimensions: Top 10 terms for CONS")
 ```
 
 ```{r}
@@ -173,9 +172,10 @@ gamma.pros %>%
   summarize(gamma = mean(gamma)) %>%
   ggplot(aes(company, gamma, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
-  facet_wrap(~ topic, scales = "free") +
+  facet_wrap(~ topic) +
   coord_flip() +
-  scale_x_reordered()
+  scale_x_reordered() +
+  xlab("")
 ```
 
 
@@ -189,9 +189,10 @@ gamma.cons %>%
   summarize(gamma = mean(gamma)) %>%
   ggplot(aes(company, gamma, fill = factor(topic))) +
   geom_col(show.legend = FALSE) +
-  facet_wrap(~ topic, scales = "free") +
+  facet_wrap(~ topic) +
   coord_flip() +
-  scale_x_reordered()
+  scale_x_reordered() +
+  xlab("")
 ```
 
 

@@ -1,5 +1,5 @@
 ---
-title: "Embedding-JDL"
+title: "Supervised Learning"
 output: html_document
 ---
 
@@ -14,13 +14,6 @@ library(ranger)
 
 # Importing the data
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
-```
-
-```{r,echo=FALSE}
-#The output shows that 429 reviews are duplicated
-# We will remove these rows
-bank_reviews %<>%
-  filter(!duplicated(review_id))
 ```
 
 ```{r, include=FALSE}
@@ -79,8 +72,8 @@ tokens.pros <- tokenize_reviews(corpus.pros)
 tokens.cons <- tokenize_reviews(corpus.cons)
 ```
 
-
-```{r}
+We decide to keep the review with more than 9 reviews
+```{r, echo=TRUE}
 # Keeping reviews with more than a certain number of token for pros & cons
 min.token <- 10
 
@@ -116,7 +109,7 @@ set.seed(123)
 index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
 ```
 
-# DTM
+### Document Term Matrix
 ```{r}
 # Creating a result Dataframe
 results_lsa_dtm <- expand.grid(
@@ -163,11 +156,19 @@ for (i in 1:nrow(results_lsa_dtm)){
                        data = df.tr)
   pred.rf <- predict(reviews.rf, df.te)$predictions
   results_lsa_dtm$RF[i] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
-  }
+}
+
+
+results_lsa_dtm %>%
+  kable_maker(caption="Document-term frequency: RMSE for LM and RF",
+                                      col.names=c("Method","Input",
+                                                  "# of dimensions pros",
+                                                  "# of dimensions cons",
+                                                  "Linear model",
+                                                  "Random forest"))
 ```
 
-
-# TFIDF
+### TF-IDF
 
 ```{r}
 results_lsa_tfidf <- expand.grid(
@@ -215,7 +216,15 @@ for (i in 1:nrow(results_lsa_tfidf)){
                        data = df.tr)
   pred.rf <- predict(reviews.rf, df.te)$predictions
   results_lsa_tfidf$RF[i] <- sqrt(mean((pred.rf - df.te$Score) ^ 2))
-  }
+}
+
+results_lsa_tfidf %>%
+  kable_maker(caption="TF-IDF: RMSE for LM and RF",
+                                      col.names=c("Method","Input",
+                                                  "# of dimensions pros",
+                                                  "# of dimensions cons",
+                                                  "Linear model",
+                                                  "Random forest"))  
 ```
 
 
@@ -232,24 +241,29 @@ bestmodel <- results_lsa %>%
 
 # best models : 
 results_lsa %>%
-  top_n(-15, RMSE) %>%
-  arrange(RMSE)
+  arrange(RMSE) %>%
+  kable_maker(caption="MIXED: RMSE for LM and RF",
+                                      col.names=c("Method","Input",
+                                                  "# of dimensions pros",
+                                                  "# of dimensions cons",
+                                                  "Linear model",
+                                                  "Random forest")) 
 
-# worst models : 
-results_lsa %>%
-  top_n(10, RMSE) %>%
-  arrange(RMSE)
+# # worst models : 
+# results_lsa %>%
+#   top_n(10, RMSE) %>%
+#   arrange(RMSE)
 ```
 
 
 Could add the valence shifters to the combination as well as the log count for the cons.
 
-JDL : Woudln't add the word count since it is already reflected in topic 1 for pros & cons.
+JDL : Wouldn't add the word count since it is already reflected in topic 1 for pros & cons.
 
 # Best model (TF-IDF + LSA)
 We can also the valence shifter and the long length of the reviews to it.
 
-```{r}
+```{r, echo=TRUE}
 lsa.pros <- textmodel_lsa(tfidf.pros, nd = bestmodel$dimPos)
 # lsa.cons <- textmodel_lsa(tfidf.cons, nd = 20)
 # Even better for the cons to be 30
@@ -272,13 +286,14 @@ set.seed(100)
 reviews.rf <- ranger(Score ~ .,
                      data = df.tr,
                      importance = "impurity")
+
 pred.rf <- predict(reviews.rf, df.te)$predictions
 
-# rmse <- sqrt(mean((pred.rf - df.te$Score)^2))
-# rmse
-# 0.991 however it does not look as good as the LSA one
+rmse <- sqrt(mean((pred.rf - df.te$Score)^2))
+
 ```
 
+0.991 however it does not look as good as the LSA one
 
 ```{r}
 plot(pred.rf ~ df.te$Score, ylab="Predictions", xlab="Observed", pch=20)
@@ -289,7 +304,7 @@ What worked well and what didn't:
 - Taking the mean of the rows instead of the sum did not work either
 - Having only the sentiments is enough, also don't forget to set seed
 
-# Variable importance
+### Variable importance
 
 ```{r}
 imp <- data.frame(keyName=names(reviews.rf$variable.importance), value=reviews.rf$variable.importance, row.names=NULL)
@@ -327,11 +342,15 @@ cons.3 <- data.frame(keyName = names(
 )
 
 cons.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
-  arrange(desc(value))
+  arrange(desc(value)) %>%
+  kable_maker(caption="The most important variable seems related to colleagues",
+                                      col.names=c("Key words","Value",
+                                                  "Absolute value"))
 ```
 
-this topic seems to be related to the collegues.
+Blalalalalalaal
 
+Let's have a look at another pro topic
 ```{r}
 pros.3 <- data.frame(keyName = names(
   lsa.pros$features[, 3]),
@@ -340,10 +359,13 @@ pros.3 <- data.frame(keyName = names(
 )
 
 pros.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
-  arrange(desc(value))
+  arrange(desc(value)) %>%
+  kable_maker(caption="Topic pro 3 - Related to customer relationship",
+                                      col.names=c("Key words","Value",
+                                                  "Absolute value"))
 ```
 
-this topic seems to be related to the holidays and days off
+We see that ....
 
 ## Word Embedding & Glove
 Here we will also try to model using embedding and glove
@@ -389,7 +411,7 @@ results_glove <- expand.grid(
 ```
 
 
-```{r}
+```{r, results='hide',message=FALSE, echo=TRUE}
 library(text2vec)
 # Compute the RMSE for each combination of #Topic for pros and cons
 for (i in 1:nrow(results_glove)) {
@@ -464,7 +486,13 @@ for (i in 1:nrow(results_glove)) {
 
 ```{r}
 results_glove %>%
-  arrange(RMSE)
+  arrange(RMSE) %>%
+  kable_maker(caption="GLOVE: RMSE results",
+                                      col.names=c("Method","Input",
+                                                  "# of dimensions pros",
+                                                  "# of dimensions cons",
+                                                  "Learner",
+                                                  "RMSE"))
 ```
 
 glove is not as good as LSA.
