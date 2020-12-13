@@ -5,13 +5,10 @@
 # load the required packages
 packages <- c(
   "here",
-  # for txt mining
   "quanteda",
   "quanteda.textmodels",
-  # for the project's organization
   "tidyverse",
   "lubridate",
-  # for wrangling
   "ggrepel",
   "gghighlight",
   "patchwork",
@@ -24,20 +21,25 @@ packages <- c(
   "lexicon",
   "textstem",
   "text2vec",
-  # for plotting
   "knitr",
   "kableExtra",
   "wordcloud",
   "RColorBrewer",
   "ggwordcloud",
   "ggpubr",
-  # for the report
   "bookdown",
   "rmarkdown",
   "tidytext",
-  "rmdformats"
+  "rmdformats",
+  "ranger",
+  "ngram",
+  "topicmodels"
 )
 
+# to install the pacakges that are missing please run this
+# install.packages(setdiff(packages, rownames(installed.packages())))  
+
+# to load the packages
 purrr::walk(packages, library, character.only = TRUE)
 
 ######################################################
@@ -81,4 +83,10 @@ kable_maker <- function(a_tibble, ...) {
     kable_styling(bootstrap_options = c("striped", "hover"),position = "center",
                   font_size = 14) %>%
     `if`((nrow(a_tibble) > 5 | ncol(a_tibble) > 5), (.) %>% scroll_box(height = "500px"), .)
+}
+
+# using the kable_maker to display the first 5 rows for exercise 3
+kable_head <- function(a_tibble) {
+  a_tibble %>%
+    head(5) %>% kable_maker()
 }

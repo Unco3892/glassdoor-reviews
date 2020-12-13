@@ -1,6 +1,6 @@
 <h1>
 # Data
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
 

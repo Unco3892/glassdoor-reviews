@@ -13,9 +13,6 @@ For supervised learning, we decided to apply a different strategy from the unsup
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
 
-library(lexicon)
-library(ngram)
-library(ranger)
 
 # Importing the data
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
@@ -309,9 +306,9 @@ Here we can see that the lenght of pros and cons are important and that the sent
 ```{r}
 imp <- data.frame(keyName=names(reviews.rf$variable.importance), value=reviews.rf$variable.importance, row.names=NULL)
 
-imp$type[1:51] <- "pros"
-imp$type[21:51] <- "cons"
-imp$type[51:51] <- "other"
+imp %<>% mutate(type= case_when(str_detect(keyName, "pros") ~ "pros",
+               str_detect(keyName, "cons") ~ "cons",
+               !str_detect(keyName, "pros|cons") ~ "other"))
 ```
 
 ```{r}

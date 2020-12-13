@@ -1,14 +1,8 @@
 <h1>
 # Unsupervised Topic Analysis 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
-
-library(lexicon)
-library(ngram)
-library(ranger)
-library(topicmodels)
-library(tidytext)
 ```
 
 ```{r}
