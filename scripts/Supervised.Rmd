@@ -2,7 +2,10 @@
 title: "Supervised Learning"
 output: html_document
 ---
+#Supervised Learning
+In this supervised learning part, we applied machine learning methods to model our data in order to predict the rating of the review. To do so we proceed the following way: 
 
+First, we applied a filter to remove the duplicated entries and also add sentiments separately for pros and con which will be combined later. In addition, we also added the word count. We decided to not use the sentiment function as it gave some recycling issues. We use get_sentences to avoid warnings. After, using lematization with the function token_replace, we decided to use reviews containing at least 10 tokens.  
 
 ```{r , include=FALSE}
 # Loading packages and knitr options
