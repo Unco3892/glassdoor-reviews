@@ -2,7 +2,7 @@
 title: "Unsupervised Learning"
 output: html_document
 ---
-
+# Unsupervised Topic Analysis 
 
 ```{r setup, include=FALSE}
 # Loading packages and knitr options
@@ -39,8 +39,9 @@ bank_reviews %<>%
   filter(!duplicated(review_id))
 ```
 
-### Preprocessing
-We remove the following tokens, because .....
+## Preprocessing
+
+To start our analysis, we tokenized our data and removed the stopwords. To make a relevant analysis, we manually removed some words that, from our point of view, would create a bias in our analysis. Stopwords mainly include uninformative words such as quantifiers or company names which appear in every topic. The stopwords definition was an evolutive process. When we performed the unsupervised and superviseed analysis we changed our stopwords gradually. 
 ```{r, echo=TRUE}
 tokens_to_remove <- c(
       "bank",#"ubs",#"jpmorgan",
@@ -77,7 +78,7 @@ tokens.cons <- quanteda::tokens(
   tokens_remove(c(tokens_to_remove, stopwords("english")))
 ```
 
-On garde les reviews avec minimum 5 token, because ....
+We selected the pros and cons reviews with at least five tokens because Glassdoor's users can not write a review with less than five words. 
 ```{r, echo=TRUE}
 # Keeping reviews with more than a certain number of token for pros & cons
 min.token <- 5
@@ -97,9 +98,14 @@ dfm.pros <- dfm(tokens.pros.clean)
 dfm.cons <- dfm(tokens.cons.clean)
 ```
 
-### Dimensions testing
+## Latent dirichlet allocation Analysis
 
-Tester le nmb de dimensions
+The LDA method displays each topic as a combination of words, and each document as a combination of topics. We created two functions, fors pros and cons, that displays our DFM in an LDA plot. 
+
+## Dimensions testing
+
+After several trials, we decided to fix the number of topics at 3 and the number of terms at 10 for pros and cons reviews. Having a small number of terms on the LDA plots allow us to better visualize the topics and adding more topics does not bring more insights.
+
 ```{r}
 ## convert quateda object to topicmodels object
 K <- 3
@@ -110,7 +116,8 @@ cons.dtm <- convert(dfm.cons, to = "topicmodels")
 lda.cons <- LDA(cons.dtm, k = K)
 ```
 
-### Latent dirichlet allocation
+###Topic by word
+Here we can see that for pros and cons, it is very difficult to distinguish which words are more specific to each topic because the three topics have a lot of common words. 
 
 ```{r}
 beta.pros <- tidy(lda.pros, matrix = "beta")
@@ -153,6 +160,9 @@ beta.cons.top.terms %>%
   labs(title="3 dimensions: Top 10 terms for CONS")
 ```
 
+
+###Topic by Company 
+Here, we wanted to see the probability of each text being part of a topic. To do so, we have attached each document with the company, then we have made the average gamma by company, which allowed us to see that no company is closer to a topic than another. In fact, each bank has a probability higher than 30% to be part of the three topics for pros and cons. 
 ```{r}
 # Retriving the company
 company <- data.frame(cbind(docnames(dfm.pros), docvars(tokens.pros.clean, "company")), stringsAsFactors = FALSE)
