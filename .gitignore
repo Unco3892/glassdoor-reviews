@@ -3,3 +3,6 @@
 .RData
 .Ruserdata
 .DS_Store
+report/report_cache/
+report/report_files/
+data/cleaned-reviews.RData

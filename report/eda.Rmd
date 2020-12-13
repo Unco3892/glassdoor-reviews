@@ -1,10 +1,18 @@
 <h1>
+
+```{r, include=FALSE}
+# Loading packages and knitr options
+source(here::here("scripts/setup.R"))
+# Loading the reviews from the introduction part
+load(here::here("data/cleaned-reviews.RData"))
+```
+
 #Exploratory Analysis
 A general EDA for the reviews. Note that here we treat each company as a document. Our dataset is then composed of 23341 documents.
 
 
 ## Tokenization
-Text Mining results are largely impacted by the tokenization process. After testing differents options, we decide to use the lemmatization as it is the most promising option. 
+Text Mining results are largely impacted by the tokenization process. After testing different options, we decide to use the lemmatization as it is the most promising option. 
 
 We create the function EDA_handler, that deals with every aspect of the tokenization. The tokens are split by word and we also remove the stopwords. We also do not want to take into consideration the case and lowercase the tokens.
 
@@ -21,7 +29,7 @@ EDA_handler <-
             aggregate_cloud = FALSE,
             lemma=FALSE) {
     # creating the new column name
-    new_col <- paste0(quo_name(enquo(text_column)), "_word")
+    new_col <- paste0(dplyr::quo_name(rlang::enquo(text_column)), "_word")
     # tokenization of the reviews
     review_token <- tidytext::unnest_tokens(
       a_tibble,
@@ -476,13 +484,6 @@ b<-textstat_lexdiv(reviews.bank.pro.dfm,
 
 ggarrange(a,b,
           ncol=2,nrow=1)
-# textstat_lexdiv(reviews.bank.pro.dfm,
-#                 measure = "MATTR") %>%
-#   ggplot(aes(x = reorder(document, MATTR), y = MATTR)) +
-#   geom_point() +
-#   coord_flip() +
-#   xlab("Text") +
-#   ylab("MATTR's index")
 ```
 
 We use both Yule's index and TTR's index to demonstrate that they are not candidate for classification. Both graphs tell very diffferents stories, and we cannot correlate these results with the employee_review.

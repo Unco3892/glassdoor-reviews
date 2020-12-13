@@ -6,7 +6,6 @@ source(here::here("scripts/setup.R"))
 
 # Importing the data
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
-
 ```
 * Method: Scrapping
 * Website: Glassdoor.com 
@@ -39,8 +38,7 @@ The dataset consists of `r length(unique(bank_reviews$company))` banks which are
 ### Checking for NAs and duplicates.
 
 ```{r,echo=FALSE}
-freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",
-                                      col.names=c("Number of missing values","%")) 
+freq.na(bank_reviews) %>% kable_maker(caption="Overview of the missing values",col.names=c("Number of missing values","%")) 
 ```
 
 <br />
@@ -101,21 +99,9 @@ bank_reviews %>%
 
 ```{r, warning=FALSE, message=FALSE}
 # calculating the mean number of words
-# mean_words_cal <- function(a_word_column) {
-#   mean(sapply(strsplit(
-#     as.character(a_word_column), "[[:space:]]"
-#   ), length))
-# }
-
 mean_words_cal <- function(a_word_column) {
   mean(sapply(str_count(as.character(a_word_column), '\\w+'), sum))
 }
-
-# median_words_cal <- function(a_word_column) {
-#   median(sapply(strsplit(
-#     as.character(a_word_column), "[[:space:]]"
-#   ), length))
-# }
 
 median_words_cal <- function(a_word_column) {
   median(sapply(str_count(as.character(a_word_column), '\\w+'), sum))
@@ -149,12 +135,11 @@ Regarding the number of words per bank for the reviews, we cannot identify inter
 <br />
 
 ```{r fig3, fig.width = 6, fig.asp = .72,out.width = "75%"}
-
 count_words_cal <- function(a_word_column) {
   sapply(str_count(as.character(a_word_column), '\\w+'), sum)
 }
 
-e<-bank_reviews %>%
+plot_1<-bank_reviews %>%
   mutate(word=count_words_cal(employer_pros)) %>%
   group_by(word) %>%
   summarise(n=n()) %>%
@@ -166,7 +151,7 @@ e<-bank_reviews %>%
   labs(title="Pros")+
   geom_vline(xintercept = 10)
 
-f<-bank_reviews %>%
+plot_2<-bank_reviews %>%
   mutate(word=count_words_cal(employer_cons)) %>%
   group_by(company,word) %>%
   summarise(n=n(),company) %>%
@@ -178,12 +163,15 @@ f<-bank_reviews %>%
   labs(title="Cons") +
   geom_vline(xintercept = 10)
 
-ggarrange(e,f,
+ggarrange(plot_1,plot_2,
           ncol=2,nrow=1)
-
-
 ```
 
 <br />
 Both graphs above clearly show that the number of word per review is quite concentrated around 5-6 words. This result is not surprising, as every new Glassdoor member need to write minimum length pro and con reviews for account validation. Most of them write a very short review.
 <br />
+
+```{r, cache= TRUE}
+# We save the data to be evaluated to be used again in the eda
+save(bank_reviews, file= here::here("data/cleaned-reviews.RData"))
+```
