@@ -1,9 +1,5 @@
----
-title: "Unsupervised Learning"
-output: html_document
----
+<h1>
 # Unsupervised Topic Analysis 
-
 ```{r setup, include=FALSE}
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
@@ -14,7 +10,6 @@ library(ranger)
 library(topicmodels)
 library(tidytext)
 ```
-
 
 ```{r}
 # Importing the data
@@ -30,7 +25,6 @@ corpus.pros <- corpus(x = bank_reviews,
 corpus.cons <- corpus(x = bank_reviews,
                              text_field = c("employer_cons"))
 ```
-
 
 ```{r,echo=FALSE}
 #The output shows that 429 reviews are duplicated

@@ -1,9 +1,4 @@
----
-title: "Introduction"
-author: "Rina Neziri"
-date: "12/12/2020"
-output: html_document
----
+<h1>
 #Introduction
 
 As part of our Text Mining course, we decided to conduct a project to determine the rating of five banks (JP Morgan, Deutsche Bank, TD, HSBC Holdings and UBS) based on reviews from the Glassdoors website. 

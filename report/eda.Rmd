@@ -1,8 +1,4 @@
----
-title: "Exploratory Data Analysis"
-output: html_document
----
-
+<h1>
 #Exploratory Analysis
 A general EDA for the reviews. Note that here we treat each company as a document. Our dataset is then composed of 23341 documents.
 

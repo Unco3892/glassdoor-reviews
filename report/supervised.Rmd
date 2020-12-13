@@ -1,7 +1,4 @@
----
-title: "Supervised Learning"
-output: html_document
----
+<h1>
 #Supervised Learning
 In this supervised learning part, we applied machine learning methods to model our data in order to predict the rating of the review. To do so we proceed the following way: 
 

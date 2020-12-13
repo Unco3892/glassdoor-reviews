@@ -1,0 +1,17 @@
+---
+title: "**Text Mining 2020**"
+author: "Ilia Azizi, Justin Denis-Lessard, Romain Donati, Rina Neziri"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  rmdformats::material:
+    use_bookdown: true
+    self_contained: true
+    css: custom.css
+---
+
+<!-- Abstract could go here but if it didn't work make a seperate rmd file for it -->
+
+```{r child = c('introduction.Rmd', 'data.Rmd', 'eda.Rmd', 'unsupervised.Rmd', 'supervised.Rmd')}
+```
+
+<!-- Conclusion to be added -->

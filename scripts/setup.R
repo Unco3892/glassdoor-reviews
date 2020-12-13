@@ -81,17 +81,3 @@ kable_maker <- function(a_tibble, ...) {
                   font_size = 14) %>%
     `if`((nrow(a_tibble) > 5 | ncol(a_tibble) > 5), (.) %>% scroll_box(height = "500px"), .)
 }
-
-# The original code
-# kable_maker <- function(a_tibble, ...) {
-#   a_tibble %>%
-#     kable(longtable = TRUE, align = 'l', ...) %>%
-#     kable_styling(bootstrap_options = c("striped", "hover")) %>%
-#     `if`(nrow(a_tibble) > 5, (.) %>% scroll_box(height = "220px"), .)
-# }
-
-# using the kable_maker to display the first 5 rows for exercise 3
-kable_head <- function(a_tibble) {
-  a_tibble %>%
-    head(5) %>% kable_maker()
-}

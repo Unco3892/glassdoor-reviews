@@ -1,5 +1,7 @@
+# executing the scrapping process using this script
+
 library(tidyverse)
-source(here::here("utilities/scrape.R"))
+source(here::here("scripts/glassdoor-html.R"))
 #> Loading libraries...
 #> Sourcing functions...
 

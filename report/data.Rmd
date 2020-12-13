@@ -1,10 +1,5 @@
----
-title: "Data"
-author: "Rina Neziri"
-date: "12/12/2020"
-output: html_document
----
-
+<h1>
+# Data
 ```{r setup, include=FALSE}
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
@@ -13,9 +8,6 @@ source(here::here("scripts/setup.R"))
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 
 ```
-
-# Data
-
 * Method: Scrapping
 * Website: Glassdoor.com 
 * Data: JP Morgan, Deutsche Bank, TD, HSBC Holdings and UBS english reviews 

@@ -1,3 +1,4 @@
+# extracting the elements of the html through this script
 message("Loading libraries...")
 suppressPackageStartupMessages({
   library(rvest)
