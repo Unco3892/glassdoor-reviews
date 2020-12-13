@@ -33,7 +33,8 @@ packages <- c(
   "rmdformats",
   "ranger",
   "ngram",
-  "topicmodels"
+  "topicmodels",
+  "textdata"
 )
 
 # to install the pacakges that are missing please run this
