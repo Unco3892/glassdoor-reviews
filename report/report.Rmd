@@ -9,7 +9,7 @@ output:
     css: custom.css
 ---
 
-<!-- Abstract could go here but if it didn't work make a seperate rmd file for it -->
+<!-- Abstract could go here but if it didn't work make a separate rmd file for it -->
 
 ```{r child = c('introduction.Rmd', 'data.Rmd', 'eda.Rmd', 'unsupervised.Rmd', 'supervised.Rmd')}
 ```

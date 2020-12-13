@@ -1,3 +1,0 @@
-- Seperate by the number of the words not by space by the count
-- Company name feature to be added to the modelling part
-- Former vs Current Employee feature to be added to the modelling part
