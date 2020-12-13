@@ -34,7 +34,8 @@ packages <- c(
   # for the report
   "bookdown",
   "rmarkdown",
-  "tidytext"
+  "tidytext",
+  "rmdformats"
 )
 
 purrr::walk(packages, library, character.only = TRUE)
