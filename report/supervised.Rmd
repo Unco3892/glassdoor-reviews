@@ -1,13 +1,12 @@
 # Supervised Learning
-In this supervised learning part, we applied machine learning methods to model our data in order to predict the rating of the review as a regression task. To do so we proceed the following way: 
-We applied a filter to remove the duplicated entries and also added the sentiments separately for pros and con which we have the summed up to obtain the total sentiment for each review. Additionally, we have made use of the word count for both pros and cons and obtain the total words found in a single review. We decided to not use the sentiment function as it gave some recycling issues. We used get_sentences to avoid warnings. Furthermore, using lemmatization with the function token_replace, we decided to use reviews containing at least 10 tokens. The motivation behind this removal is the preference given to quality reviews which here is highly dependent on the size as many individuals write extremely short reviews to easily to simply have access to the other information found on the website.
+In this supervised learning part, we applied machine learning techniques to our data in order to predict the rating of the reviews as a regression task. To do so we proceeded the following way: 
+We applied a filter to remove the duplicated entries and also added the sentiments separately for pros and con which we have summed up to obtain the total sentiment for each review. Additionally, we have made use of the word count for both pros and cons and obtain the total words found in a single review. We decided not to use the sentiment function as it gave some recycling issues. We used get_sentences to avoid warnings. Furthermore, using lemmatization with the function token_replace, we decided to use reviews containing at least 10 tokens. The motivation behind this removal is the preference given to quality reviews which here is highly dependent on the size as many individuals write extremely short reviews to easily to simply have access to the other information found on the website.
 
 ilia: what do you mean we decided not to use the sentiment function as it gave some recycling issues?
 
-Given the fact that our motivation is to fit a model that can output accurate predictions, we used linear regression and random forest model with LSA and Word Embedding. Added to this, we have built the document frequency matrix bag of words and the TF-IFD which helped us to define the importance of each words for specific document. 
+Given that we are in a regression task context, we employed linear regression and random forest model associated with LSA or Word Embedding. These dimensions reductions methods were used on top of either the document frequency matrix bag of words or the TF-IDF.
 
-For supervised learning, we decided to apply a different strategy from the unsupervised part. In fact,instead of having 3 topics for pros and cons, we decided to mix the two and assign a different number of topics for each of the two categories (ex: we can have 3 topics for the pros and 20 topics for the cons) to achieve better predictions. More precisely, we created a matrix of what is the ideal number of topics for pros and cons.  In our case, we decided to use the RMSE to tell use which combination is the best. There is two ways to proceed in our case. The first one is to do the LSA for cons and pros and then use both of them in the model, the second is to mix pros and cons and do the LSA . 
-
+For supervised learning, we decided to apply a different strategy than from the unsupervised part. Instead of having three topics for pros and cons, we decided to assign a different number of topics for each of the two categories (i.e. we can have 5 topics for the pros and 20 topics for the cons) in order to achieve better predictions. The RMSE was then used to tell us which combination is the best.
 
 ```{r , include=FALSE}
 # Loading packages and knitr options
@@ -299,6 +298,8 @@ plot(pred.rf ~ df.te$Score, ylab="Predictions", xlab="Observed", pch=20)
 ```
 
 ### Variable importance
+
+Sinnce our best model is using Random Forest with LSA, it is possible to extract the variables importance and assess wether a topic is more or less important in predicting accuratly the ratings. 
 
 Here we can see that the length of pros and cons are important and that the sentiment score helps predicting greatly. We can also observe that `cons.3` seems to be an important topic. 
 ```{r}
