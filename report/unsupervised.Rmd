@@ -164,7 +164,7 @@ company <- company %>%
 ```{r, warning=FALSE, message=FALSE}
 gamma.pros <- tidy(lda.pros, matrix = "gamma")
 
-gamma.pros %>%
+a<-gamma.pros %>%
   left_join(company) %>%
   group_by(company, topic) %>%
   summarize(gamma = mean(gamma)) %>%
@@ -173,15 +173,16 @@ gamma.pros %>%
   facet_wrap(~ topic) +
   coord_flip() +
   scale_x_reordered() +
-  xlab("")
+  xlab("") +
+  labs(title="Pros: Gammas")
 ```
 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.asp=0.9}
 gamma.cons <- tidy(lda.cons, matrix = "gamma")
 
 
-gamma.cons %>%
+b<-gamma.cons %>%
   left_join(company) %>%
   group_by(company, topic) %>%
   summarize(gamma = mean(gamma)) %>%
@@ -190,7 +191,11 @@ gamma.cons %>%
   facet_wrap(~ topic) +
   coord_flip() +
   scale_x_reordered() +
-  xlab("")
+  xlab("") +
+  labs(title="Cons: Gammas")
+
+ggarrange(a,b,
+          ncol=2,nrow=1)
 ```
 
 

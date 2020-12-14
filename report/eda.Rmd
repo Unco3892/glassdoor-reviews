@@ -17,7 +17,7 @@ Text Mining results are largely impacted by the tokenization process. After test
 We create the function `EDA_handler`, that deals with every aspect of the tokenization. The tokens are split by word and we also remove the stopwords. We also do not want to take into consideration the case and lowercase the tokens.
 
 ## Wordclouds
-```{r,message=FALSE,echo=TRUE}
+```{r,message=FALSE}
 # creating function to take out the pros and cons of the reviews
 EDA_handler <-
   function (a_tibble,
@@ -76,12 +76,13 @@ EDA_handler <-
       coord_flip() + 
       facet_grid( ~ company) + 
       theme_light() +
+      theme(legend.position = "none") +
       # another alternative for the wrap --> facet_wrap(~company, ncol = 2)
       labs(
         title = paste0("Most frequent ",
                        fix_lables(new_col),
                        "s per bank"),
-        y = `if`(TF_IDF, "TF_IDF", NULL),
+        y = "Number of word occurence per bank",
         x = fix_lables(new_col)
       )
     
@@ -131,7 +132,7 @@ EDA_handler <-
 
 
 ```{r, echo=FALSE,message=FALSE, fig.asp=1}
-EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
+#EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
 
 # TF approach
 pros_tf <- EDA_handler(bank_reviews, employer_pros, lemma=TRUE)
@@ -143,19 +144,25 @@ pros_tf_idf <- EDA_handler(bank_reviews, employer_pros, n_top = 5,TF_grouped= TR
 cons_tf_idf <- EDA_handler(bank_reviews, employer_cons, n_top = 1,TF_grouped= TRUE, TF_IDF = TRUE)
 
 # The grouped and specific to each document --> Only one word is shown which is quite strange and requires more investigation
-pros_grouped <- EDA_handler(bank_reviews, employer_pros, n_top = 1, TF_grouped= TRUE)
+#pros_grouped <- EDA_handler(bank_reviews, employer_pros, n_top = 1, TF_grouped= TRUE)
 
 # generating word cloud, note that you always get `null` in the output which
 # is because based on base graphics and the side effect of drawing to the current graphics device.
-pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = TRUE)
+#pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = TRUE)
 
 # generating aggregated wordcloud
-pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
+pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 4, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
 
 cons_cloudy_aggregated <- EDA_handler(bank_reviews, employer_cons, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
 
 # note: in the rmarkdown approach you may have a warning that management could not fit on the screen, this is normal and in case it occurred a picture has to be posted of this.
 ```
+
+```{r}
+pros_cloudy_aggregated$Plotting_most_frequent_words
+```
+
+
 
 The ggplot represents the most frequent words per company as the grouping was not done on the review but the company itself.
 

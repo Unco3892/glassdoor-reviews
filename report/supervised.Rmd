@@ -236,7 +236,7 @@ results_lsa_tfidf %>%
                                                   "Random forest"))  
 ```
 
-##Combining the results
+## Combining the results
 The following table shows us that the lowest RMSE is obtained by using 30 topics for the pros and 20 for the cons. The best result (RMSE= 0.900) is given by a random forest using TF-IDF+LSA, which gave us the best results among the 3. 
 ```{r}
 # combining the results
@@ -300,7 +300,7 @@ plot(pred.rf ~ df.te$Score, ylab="Predictions", xlab="Observed", pch=20)
 
 ### Variable importance
 
-Here we can see that the length of pros and cons are important and that the sentiment score helps predicting greatly. We can also observe that cons.3 seems to be an important topic. 
+Here we can see that the length of pros and cons are important and that the sentiment score helps predicting greatly. We can also observe that `cons.3` seems to be an important topic. 
 ```{r}
 imp <- data.frame(keyName=names(reviews.rf$variable.importance), value=reviews.rf$variable.importance, row.names=NULL)
 

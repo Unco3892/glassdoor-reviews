@@ -13,9 +13,10 @@ bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 
 ## Data Acquisition
 Our process of data acquisition was composed of the following steps:
+
 1. First, we identified the html tags required with the information suitable for the purpose of this analysis, and prepared a script (`scripts/glassdoor-html`) in charge of identifying the desired tags and combined all of the reviews for a company into a single tibble. We also tried to account for any parsing errors that may happen as the html tags of the website were consistently updated.
 
-2. Next, we used another script (`scripts\web-scraper`) and created a vector with the URL of the five desired companies. Once defining the minimum number of required reviews, which was **5,010** per company, we looped over each page of the review and combined all the results for the five banks into a single tibble. In order to have issues accessing the website a several times (i.e. being blocked by the company), we have defined a `rnorm_sleep_generator` which introduces random pauses between each visit replicating a human's browsing behaviors.
+2. Next, we used another script (`scripts\web-scraper`) and created a vector with the URL of the five desired companies. Once defining the minimum number of required reviews, which was **5,010** per company, we looped over each page of the review and combined all the results for the five banks into a single tibble. In order not to have issues accessing the website a several times (i.e. being blocked by the company), we have defined a `rnorm_sleep_generator` which introduces random pauses between each visit replicating a human's browsing behaviors.
 
 3. Finally, we remove any duplicates, parse the review time and finished by writing our CSV file with bank's processed reviews. A sample of the website and the tags during the scrapping process can be found in `data\glass-door-sample.html`.
 
