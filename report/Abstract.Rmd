@@ -1,10 +1,10 @@
 # Abstract
-In the following report, we used text mining techniques to predict company ratings through Glassdoor Reviews. </p>
+In the following report, we employ Text Mining methods to predict company ratings through Glassdoor Reviews. </p>
 
-Firstly, we treated positive and negative reviews separately, then as part of our pre-treatment we applied different techniques, such as removal of stopwords and lemmatization and performed an exploratory analysis. </p>
+First, we treat positive and negative parts of each review separately, then as part of our pre-treatment we apply different techniques, such as removal of stopwords and lemmatization and performed an exploratory analysis. </p>
 
-Secondly, based on an unsupervised analysis, we observed through the application of the Latent Dirichlet Allocation (LDA) method that, first, it was difficult to distinguish which words are more specific to each topic because the topics had a lot of common words and second, that no company is closer to a topic than another. This enable us to assert that LDA is irrelevant in this case.</p>
+In second time, we observe through the application of the Latent Dirichlet Allocation (LDA) method that it is difficult to distinguish which tokens are more specific to each topic that no topic is specific to any company.</p>
 
-Finally, we concluded our work with supervised learning methods in order to find the best methods relatively to the number of pros and cons revieews to predict the rating. After comparison, we concluded that the best model was the one with the lowest RMSE, whihc was given by a random forest using TF-IDF+LSA with 30 topics for the pros and 20 for the cons.
+Finally, we conclude our work with supervised learning methods and perform a grid search in order to find the best model and hyperparameters to predict the rating. After comparison, we conclude that the best model is the one with the lowest RMSE, which constist of a random forest using LSA on the TF-IDF with 30 topics for the positive part of the reviews and 20 for the negative part of the reviews.
 </p>
 
