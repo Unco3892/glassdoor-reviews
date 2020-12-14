@@ -895,73 +895,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
     
     
-        <style type="text/css">code{white-space: pre;}</style>
-    <style type="text/css">
-      a.sourceLine { display: inline-block; line-height: 1.25; }
-      a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-      a.sourceLine:empty { height: 1.2em; }
-      .sourceCode { overflow: visible; }
-      code.sourceCode { white-space: pre; position: relative; }
-      div.sourceCode { margin: 1em 0; }
-      pre.sourceCode { margin: 0; }
-      @media screen {
-      div.sourceCode { overflow: auto; }
-      }
-      @media print {
-      code.sourceCode { white-space: pre-wrap; }
-      a.sourceLine { text-indent: -1em; padding-left: 1em; }
-      }
-      pre.numberSource a.sourceLine
-        { position: relative; left: -4em; }
-      pre.numberSource a.sourceLine::before
-        { content: attr(data-line-number);
-          position: relative; left: -1em; text-align: right; vertical-align: baseline;
-          border: none; pointer-events: all; display: inline-block;
-          -webkit-touch-callout: none; -webkit-user-select: none;
-          -khtml-user-select: none; -moz-user-select: none;
-          -ms-user-select: none; user-select: none;
-          padding: 0 4px; width: 4em;
-          background-color: #ffffff;
-          color: #a0a0a0;
-        }
-      pre.numberSource { margin-left: 3em; border-left: 1px solid #a0a0a0;  padding-left: 4px; }
-      div.sourceCode
-        { color: #1f1c1b; background-color: #ffffff; }
-      @media screen {
-      a.sourceLine::before { text-decoration: underline; }
-      }
-      code span. { color: #1f1c1b; } /* Normal */
-      code span.al { color: #bf0303; background-color: #f7e6e6; font-weight: bold; } /* Alert */
-      code span.an { color: #ca60ca; } /* Annotation */
-      code span.at { color: #0057ae; } /* Attribute */
-      code span.bn { color: #b08000; } /* BaseN */
-      code span.bu { color: #644a9b; font-weight: bold; } /* BuiltIn */
-      code span.cf { color: #1f1c1b; font-weight: bold; } /* ControlFlow */
-      code span.ch { color: #924c9d; } /* Char */
-      code span.cn { color: #aa5500; } /* Constant */
-      code span.co { color: #898887; } /* Comment */
-      code span.cv { color: #0095ff; } /* CommentVar */
-      code span.do { color: #607880; } /* Documentation */
-      code span.dt { color: #0057ae; } /* DataType */
-      code span.dv { color: #b08000; } /* DecVal */
-      code span.er { color: #bf0303; text-decoration: underline; } /* Error */
-      code span.ex { color: #0095ff; font-weight: bold; } /* Extension */
-      code span.fl { color: #b08000; } /* Float */
-      code span.fu { color: #644a9b; } /* Function */
-      code span.im { color: #ff5500; } /* Import */
-      code span.in { color: #b08000; } /* Information */
-      code span.kw { color: #1f1c1b; font-weight: bold; } /* Keyword */
-      code span.op { color: #1f1c1b; } /* Operator */
-      code span.ot { color: #006e28; } /* Other */
-      code span.pp { color: #006e28; } /* Preprocessor */
-      code span.re { color: #0057ae; background-color: #e0e9f8; } /* RegionMarker */
-      code span.sc { color: #3daee9; } /* SpecialChar */
-      code span.ss { color: #ff5500; } /* SpecialString */
-      code span.st { color: #bf0303; } /* String */
-      code span.va { color: #0057ae; } /* Variable */
-      code span.vs { color: #bf0303; } /* VerbatimString */
-      code span.wa { color: #bf0303; } /* Warning */
-    </style>
     
         <style type="text/css">@font-face {
 font-family: 'Muli';
@@ -1140,18 +1073,18 @@ background: url(data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/4RrIRXhpZgAAT
 	    <!-- Abstract and conclusion+limitation to be added as seperate Rmd files -->
 <div id="abstract" class="section level1">
 <h1><span class="header-section-number">1</span> Abstract</h1>
-In the following report, we used text mining techniques to predict company ratings through Glassdoor Reviews.
+In the following report, we employ Text Mining methods to predict company ratings through Glassdoor Reviews.
 </p>
-Firstly, we treated positive and negative reviews separately, then as part of our pre-treatment we applied different techniques, such as removal of stopwords and lemmatization and performed an exploratory analysis.
+First, we treat positive and negative parts of each review separately, then as part of our pre-treatment we apply different techniques, such as removal of stopwords and lemmatization and performed an exploratory analysis.
 </p>
-Secondly, based on an unsupervised analysis, we observed through the application of the Latent Dirichlet Allocation (LDA) method that, first, it was difficult to distinguish which words are more specific to each topic because the topics had a lot of common words and second, that no company is closer to a topic than another. This enable us to assert that LDA is irrelevant in this case.
+In second time, we observe through the application of the Latent Dirichlet Allocation (LDA) method that it is difficult to distinguish which tokens are more specific to each topic that no topic is specific to any company.
 </p>
-Finally, we concluded our work with supervised learning methods in order to find the best methods relatively to the number of pros and cons revieews to predict the rating. After comparison, we concluded that the best model was the one with the lowest RMSE, whihc was given by a random forest using TF-IDF+LSA with 30 topics for the pros and 20 for the cons.
+Finally, we conclude our work with supervised learning methods and perform a grid search in order to find the best model and hyperparameters to predict the rating. After comparison, we conclude that the best model is the one with the lowest RMSE, which constist of a random forest using LSA on the TF-IDF with 30 topics for the positive part of the reviews and 20 for the negative part of the reviews.
 </p>
 </div>
 <div id="introduction" class="section level1">
 <h1><span class="header-section-number">2</span> Introduction</h1>
-As part of a <a href="https://hecnet.unil.ch/hec/syllabus/descriptif/2441">Text Mining</a> course taught at HEC Lausanne by Professor <a href="https://hecnet.unil.ch/hec/recherche/fiche?pnom=mboldi&amp;dyn_lang=en">Marc-Olivier Boldi</a>,we are going to carry out the following project:Predicting company ratings through Glassdoor Reviews.
+As part of a <a href="https://hecnet.unil.ch/hec/syllabus/descriptif/2441">Text Mining</a> course taught at HEC Lausanne by Professor <a href="https://hecnet.unil.ch/hec/recherche/fiche?pnom=mboldi&amp;dyn_lang=en">Marc-Olivier Boldi</a>, we are going to carry out the following project : Predicting company ratings through Glassdoor Reviews.
 </p>
 Glassdoor is a website where current and former company employees anonymously evaluate their salary, work environment and the company. Being the reference for obtaining information that is not made public by companies, the website has a large audience which is mainly due to the fact that the current and former employees are very active on the platform and therefore counts a lot of reviews on different companies.
 </p>
@@ -2295,14 +2228,6 @@ We have also explored the job positions to potentially identify patterns. After 
 <h2><span class="header-section-number">5.1</span> Preprocessing</h2>
 <p>To start our analysis, we tokenized our data and removed the stopwords. To make a relevant analysis, we manually removed some words that, from our point of view, would create a bias in our analysis. Stopwords mainly include uninformative words such as quantifiers or company names which appear in every topic. The stopwords definition was an evolutive process. When we performed the unsupervised and superviseed analysis we changed our stopwords gradually.</p>
 <p>We selected the pros and cons reviews with at least five tokens because Glassdoor’s users can not write a review with less than five words.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="co"># Keeping reviews with more than a certain number of token for pros &amp; cons</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2">min.token &lt;-<span class="st"> </span><span class="dv">5</span></a>
-<a class="sourceLine" id="cb2-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">tokens.pros.clean &lt;-<span class="st"> </span>tokens.pros <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-5" data-line-number="5"><span class="st">  </span><span class="kw">tokens_subset</span>(<span class="kw">ntoken</span>(tokens.pros) <span class="op">&gt;</span><span class="st"> </span>min.token <span class="op">&amp;</span><span class="st"> </span><span class="kw">ntoken</span>(tokens.cons) <span class="op">&gt;</span><span class="st"> </span>min.token)</a>
-<a class="sourceLine" id="cb2-6" data-line-number="6"></a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">tokens.cons.clean &lt;-<span class="st"> </span>tokens.cons <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb2-8" data-line-number="8"><span class="st">  </span><span class="kw">tokens_subset</span>(<span class="kw">ntoken</span>(tokens.cons) <span class="op">&gt;</span><span class="st"> </span>min.token <span class="op">&amp;</span><span class="st"> </span><span class="kw">ntoken</span>(tokens.pros) <span class="op">&gt;</span><span class="st"> </span>min.token)</a></code></pre></div>
 </div>
 <div id="latent-dirichlet-allocation-analysis" class="section level2">
 <h2><span class="header-section-number">5.2</span> Latent dirichlet allocation Analysis</h2>

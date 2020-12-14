@@ -67,7 +67,7 @@ tokens.cons <- quanteda::tokens(
 ```
 
 We selected the pros and cons reviews with at least five tokens because Glassdoor's users can not write a review with less than five words. 
-```{r, echo=TRUE}
+```{r}
 # Keeping reviews with more than a certain number of token for pros & cons
 min.token <- 5
 
