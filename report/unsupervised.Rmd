@@ -194,5 +194,5 @@ b<-gamma.cons %>%
 ggarrange(a,b,
           ncol=2,nrow=1)
 ```
-Here, we wanted to see the probability of each text being part of a topic. To do so, we have attached each document with the company, then we have made the average gamma by company, which allowed us to see that no company is closer to a topic than another. In fact, this graph emphasized the fact that using the gamma of LDA this method is irrelevant in this case.
+Here, we wanted to see the probability of each text being part of a topic. To do so, we have attached each document with the company, then we have made the average gamma by company, which allowed us to see that no company is closer to a topic than another. In fact, this graph emphasized the fact that using the gamma of LDA is irrelevant in this case.
 
