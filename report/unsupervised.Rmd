@@ -90,7 +90,7 @@ dfm.cons <- dfm(tokens.cons.clean)
 
 The LDA method displays each topic as a combination of words, and each document as a combination of topics. We created two functions, fors pros and cons, that displays our DFM in an LDA plot. 
 
-## Dimensions testing
+### Dimensions testing
 
 After several trials, we decided to fix the number of topics at 3 and the number of terms at 10 for pros and cons reviews. Having a small number of terms on the LDA plots allow us to better visualize the topics and adding more topics does not bring more insights.
 
@@ -105,8 +105,6 @@ lda.cons <- LDA(cons.dtm, k = K)
 ```
 
 ### Topic by word
-Here we can see that for pros and cons, it is very difficult to distinguish which words are more specific to each topic because the three topics have a lot of common words. 
-
 ```{r}
 beta.pros <- tidy(lda.pros, matrix = "beta")
 
@@ -147,10 +145,9 @@ beta.cons.top.terms %>%
   xlab("") +
   labs(title="3 dimensions: Top 10 terms for CONS")
 ```
-
+Here we can see that for pros and cons, it is very difficult to distinguish which words are more specific to each topic because the three topics have a lot of common words.
 
 ### Topic by Company 
-Here, we wanted to see the probability of each text being part of a topic. To do so, we have attached each document with the company, then we have made the average gamma by company, which allowed us to see that no company is closer to a topic than another. In fact, each bank has a probability higher than 30% to be part of the three topics for pros and cons. 
 ```{r}
 # Retriving the company
 company <- data.frame(cbind(docnames(dfm.pros), docvars(tokens.pros.clean, "company")), stringsAsFactors = FALSE)
@@ -197,6 +194,5 @@ b<-gamma.cons %>%
 ggarrange(a,b,
           ncol=2,nrow=1)
 ```
+Here, we wanted to see the probability of each text being part of a topic. To do so, we have attached each document with the company, then we have made the average gamma by company, which allowed us to see that no company is closer to a topic than another. In fact, this graph emphasized the fact that using the gamma of LDA this method is irrelevant in this case.
 
-
-ilia: maybe add something after these ggplots? Or move the text from above down here?
