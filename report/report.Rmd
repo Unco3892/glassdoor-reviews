@@ -11,5 +11,5 @@ output:
 
 <!-- Abstract and conclusion+limitation to be added as seperate Rmd files -->
 
-```{r child = c('introduction.Rmd', 'data.Rmd', 'eda.Rmd', 'unsupervised.Rmd', 'supervised.Rmd')}
+```{r child = c('abstract.Rmd','introduction.Rmd', 'data.Rmd', 'eda.Rmd', 'unsupervised.Rmd', 'supervised.Rmd', 'conclusion.Rmd')}
 ```
