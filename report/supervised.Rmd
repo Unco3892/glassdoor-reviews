@@ -114,7 +114,7 @@ index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
 ## Document Term Matrix
 The following table shows us that the lowest RMSE is obtained by using 50 topics for the pros and only 5 for the cons. The best result (RMSE= 0.913) is given by a linear model using DTM+LSA.
 
-ilia: here we need to make the number of topics as well as the RMSE relative not to have any issues later. i.e. `r something`
+ilia: here we need to make the number of topics as well as the RMSE relative not to have any issues later. i.e.
 
 ```{r}
 # Creating a result Dataframe
