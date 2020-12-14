@@ -1,5 +1,5 @@
-<h1>
 # Unsupervised Topic Analysis 
+
 ```{r, include=FALSE}
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
@@ -104,7 +104,7 @@ cons.dtm <- convert(dfm.cons, to = "topicmodels")
 lda.cons <- LDA(cons.dtm, k = K)
 ```
 
-###Topic by word
+### Topic by word
 Here we can see that for pros and cons, it is very difficult to distinguish which words are more specific to each topic because the three topics have a lot of common words. 
 
 ```{r}
@@ -149,7 +149,7 @@ beta.cons.top.terms %>%
 ```
 
 
-###Topic by Company 
+### Topic by Company 
 Here, we wanted to see the probability of each text being part of a topic. To do so, we have attached each document with the company, then we have made the average gamma by company, which allowed us to see that no company is closer to a topic than another. In fact, each bank has a probability higher than 30% to be part of the three topics for pros and cons. 
 ```{r}
 # Retriving the company
@@ -194,4 +194,4 @@ gamma.cons %>%
 ```
 
 
-
+ilia: maybe add something after these ggplots? Or move the text from above down here?

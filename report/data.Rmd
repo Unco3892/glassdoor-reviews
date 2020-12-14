@@ -1,5 +1,8 @@
-<h1>
 # Data
+* Method: Scrapping
+* Website: [Glassdoor.com](http://glassdoor.com/) 
+* Data: Reviews in English from five major banks, namely [JP Morgan](https://www.jpmorgan.com/CH/en/about-us), [Deutsche Bank](https://www.db.com/index?language_id=1), [TD](https://www.td.com/ca/en/about-td/), [HSBC Holdings](HSBC Holdings) and [UBS](https://www.ubs.com/).
+
 ```{r, include=FALSE}
 # Loading packages and knitr options
 source(here::here("scripts/setup.R"))
@@ -7,21 +10,24 @@ source(here::here("scripts/setup.R"))
 # Importing the data
 bank_reviews <- read_csv(here::here("data/Bank_reviews_processed.csv"))
 ```
-* Method: Scrapping
-* Website: Glassdoor.com 
-* Data: JP Morgan, Deutsche Bank, TD, HSBC Holdings and UBS english reviews 
 
 ## Data Acquisition
+Our process of data acquisition was composed of the following steps:
+1. First, we identified the html tags required with the information suitable for the purpose of this analysis, and prepared a script (`scripts/glassdoor-html`) in charge of identifying the desired tags and combined all of the reviews for a company into a single tibble. We also tried to account for any parsing errors that may happen as the html tags of the website were consistently updated.
 
-Our process of data acquisition was composed of the following steps. First, we created a vector with the URL of the 5 desired companies. Next we define the minimum number of required reviews, which was 5010. After using a loop to go over the list of companies one by one and save the results in our tibble, we created a function to extract URLs. Finally, we remove any duplicates, parse the review time and finished by writing our CSV file with bank's processed reviews. 
+2. Next, we used another script (`scripts\web-scraper`) and created a vector with the URL of the five desired companies. Once defining the minimum number of required reviews, which was **5,010** per company, we looped over each page of the review and combined all the results for the five banks into a single tibble. In order to have issues accessing the website a several times (i.e. being blocked by the company), we have defined a `rnorm_sleep_generator` which introduces random pauses between each visit replicating a human's browsing behaviors.
+
+3. Finally, we remove any duplicates, parse the review time and finished by writing our CSV file with bank's processed reviews. A sample of the website and the tags during the scrapping process can be found in `data\glass-door-sample.html`.
 
 ## Preprocessing
 
 ### Definitions
 
-`Corpus` = All reviews on GlassDoor for five major banks
+`Corpus` = All reviews on Glassdoor for five major banks
 
-`Text` = Reviews for each bank --> Used this also as the `Document`
+`Text` = Reviews for each bank falls in this category; in the EDA section, we have used the five banks as the `Document`. however, in the context of unsupervised and supervised learning, we will refer to the reviews themselves and consider each individual review rather than aggregating them.
+
+ilia: is what I have written above make sense?
 
 `Tokens` = Words in each review
 
@@ -67,7 +73,7 @@ bank_reviews %<>%
 ```
 
 <br />
-For unknown reasons, some reviews seem to have been duplicated, approximatively 429. We remove these instances from our dataset to ensure its good quality. 
+For unknown reasons, some reviews seem to have been duplicated, approximately 429. We remove these instances from our dataset to ensure its good quality. 
 <br />
 
 ### General overview
@@ -131,7 +137,7 @@ bank_reviews %>% group_by(company) %>%
 ```
 
 <br />
-Regarding the number of words per bank for the reviews, we cannot identify interesting patterns. If we look at the median and the mean number of words for cons reviews, we do not find similar results compared to the scores. It would have been interesting to see that longer cons reviews are correlated with bad score, as angry employees would emphasize the negative points of the company instead of the positive, but this is not the case here.
+Regarding the number of words per bank for the reviews, we cannot identify interesting patterns. If we look at the median and the mean number of words for cons reviews, we do not find similar results compared to the scores. It would have been interesting to see that longer cons reviews are correlated with bad score, as angry employees would emphasize the negative points of the company instead of the positive, but this is not the case here. We can use this information later in the modeling part to only work with the reviews that our long enough and not only a few passive words enriching our analysis.
 <br />
 
 ```{r fig3, fig.width = 6, fig.asp = .72,out.width = "75%"}

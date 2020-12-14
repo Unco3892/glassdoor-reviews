@@ -1,9 +1,7 @@
+@import url('https://fonts.googleapis.com/css?family=Muli:400,400i,700&display=swap');
+
 .col-xs-10 {
     width: 100%;
-}
-
-.pages h1 {
-    color: rgb(26 177 80);
 }
 
 .col-xs-3 {
@@ -14,11 +12,13 @@
     width: 80%;
 }
 
-@import url('https://fonts.googleapis.com/css?family=Muli:400,400i,700&display=swap');
+.pages h1 {
+    color: rgb(26 177 80);
+}
 
 body {
     font-family: 'Muli';
-    font-size: 19px;
+    font-size: 21px;
 }
 
 code {
