@@ -1,12 +1,10 @@
 # Supervised Learning
 In this supervised learning part, we applied machine learning techniques to our data in order to predict the rating of the reviews as a regression task. To do so we proceeded the following way: 
-We applied a filter to remove the duplicated entries and also added the sentiments separately for pros and con which we have summed up to obtain the total sentiment for each review. Additionally, we have made use of the word count for both pros and cons and obtain the total words found in a single review. We decided not to use the sentiment function as it gave some recycling issues. We used get_sentences to avoid warnings. Furthermore, using lemmatization with the function token_replace, we decided to use reviews containing at least 10 tokens. The motivation behind this removal is the preference given to quality reviews which here is highly dependent on the size as many individuals write extremely short reviews to easily to simply have access to the other information found on the website.
-
-ilia: what do you mean we decided not to use the sentiment function as it gave some recycling issues?
+We applied a filter to remove the duplicated entries and also added the sentiments separately for pros and con which we have summed up to obtain the total sentiment for each review. Additionally, we have made use of the word count for both pros and cons and obtain the total words found in a single review. We used get_sentences to avoid warnings. Furthermore, using lemmatization with the function token_replace, we decided to use reviews containing at least 10 tokens. The motivation behind this removal is the preference given to quality reviews which here is highly dependent on the size as many individuals write extremely short reviews just to have access to the information provide by other users on the website.
 
 Given that we are in a regression task context, we employed linear regression and random forest model associated with LSA or Word Embedding. These dimensions reductions methods were used on top of either the document frequency matrix bag of words or the TF-IDF.
 
-For supervised learning, we decided to apply a different strategy than from the unsupervised part. Instead of having three topics for pros and cons, we decided to assign a different number of topics for each of the two categories (i.e. we can have 5 topics for the pros and 20 topics for the cons) in order to achieve better predictions. The RMSE was then used to tell us which combination is the best.
+For supervised learning, we decided to apply a different strategy than from the unsupervised part. Instead of having three topics for pros and cons, we decided to assign a different number of topics for each of the two categories (i.e. we can have 5 topics for the pros and 20 topics for the cons) in order to achieve better predictions. We used the RMSE which has been calculated for different methods relatively to the number of topics for positive and negative reviews. 
 
 ```{r , include=FALSE}
 # Loading packages and knitr options
@@ -111,9 +109,7 @@ index.tr <- sample(size=round(0.8*length(y)), x=c(1:length(y)), replace=FALSE)
 ```
 
 ## Document Term Matrix
-The following table shows us that the lowest RMSE is obtained by using 50 topics for the pros and only 5 for the cons. The best result (RMSE= 0.913) is given by a linear model using DTM+LSA.
-
-ilia: here we need to make the number of topics as well as the RMSE relative not to have any issues later. i.e.
+The following table shows us that the lowest RMSE is obtained by using 50 topics for the pros and only 5 for the cons. The best result (RMSE= 0.913) is given by a linear model using DTM+LSA with 50 pros and 5 cons reviews.
 
 ```{r}
 # Creating a result Dataframe
@@ -174,9 +170,7 @@ results_lsa_dtm %>%
 ```
 
 ## TF-IDF
-The following table shows us that the lowest RMSE is obtained by using 20 topics for the pros and only 5 for the cons. The best result (RMSE= 0.901) is given by a random forest using TF-IDF+LSA.
-
-ilia: same comment here again about making things relative. 
+The following table shows us that the lowest RMSE is obtained by using 20 topics for the pros and only 5 for the cons. The best result (RMSE= 0.901) is given by a random forest using TF-IDF+LSA with 20 pros and 5 cons reviews.
 
 ```{r}
 results_lsa_tfidf <- expand.grid(
@@ -236,7 +230,7 @@ results_lsa_tfidf %>%
 ```
 
 ## Combining the results
-The following table shows us that the lowest RMSE is obtained by using 30 topics for the pros and 20 for the cons. The best result (RMSE= 0.900) is given by a random forest using TF-IDF+LSA, which gave us the best results among the 3. 
+The following table shows us that the lowest RMSE is obtained by using 30 topics for the pros and 20 for the cons. The best result (RMSE= 0.900) is given by a random forest using TF-IDF+LSA with 30 pros and 20 cons reviews, which gave us the best results among the 3. 
 ```{r}
 # combining the results
 results_lsa <- rbind(results_lsa_dtm, results_lsa_tfidf)
@@ -260,7 +254,7 @@ results_lsa %>%
 ```
 
 
-# Best model (TF-IDF + LSA)
+## Best model (TF-IDF + LSA)
 Here we added to our best model valence shifter (sentiment function mentioned above) and the length of the reviews. We can see that despite the addition of the new element, it does not improve our RMSE (0.991) and that the results obtained previously are all better. However, we can see that our model does quit well when it has to predict twos and threes, which could be explain by the fact that there a more reviews which have been rated with a two or a three.
 
 ```{r, echo=TRUE}
@@ -341,7 +335,7 @@ cons.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
                                                   "Absolute value"))
 ```
 
-Now let's have a look at a pro topic. We can clearly see that pros.3 is related to customer relationship, with words such as cutomer, commerce, deposit, account and retail. 
+Now let's have a look at a pro topic. We can clearly see that `pros.3` is related to customer relationship, with words such as cutomer, commerce, deposit, account and retail. 
 ```{r}
 pros.3 <- data.frame(keyName = names(
   lsa.pros$features[, 3]),
@@ -359,7 +353,7 @@ pros.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
 These results may suggest that, in general, employees are satisfied with the quality of the services provided by the company and that they are dissatisfied with internal management methods. 
 
 ## Word Embedding & Glove
-To complete our supervised learning, we used the Word Embedding and `GloVe` embedding to model in a different way. First, we computed the RMSE for each combination of number of topic for pros and cons and then, while creating our data frame, we took the mean words instead of the sum as it worked better. Finally, we can see that the results are without appeal, GloVe produces results that are worse than the ones obtained through the LSA.
+To complete our supervised learning, we used the Word Embedding and `GloVe` embedding to model in a different way. First, we computed the RMSE for each combination of number of topic for pros and cons and then, while creating our data frame, we took the mean words instead of the sum as it worked better. 
 
 ```{r}
 # Tried windows 5,4,3 and 4 seems reasonable
@@ -482,6 +476,4 @@ results_glove %>%
                                                   "Learner",
                                                   "RMSE"))
 ```
-
-
-ilia: mention something here again to conlcude this part.
+Finally, we can see that the results are without appeal. `GloVe` produces results that are worse than the ones obtained through the `LSA`.
