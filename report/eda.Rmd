@@ -368,7 +368,7 @@ actual_score %>%
                                                   "Afinn sentiment score"))
 ```
 
-We get a score that 4/5 times the sentiment corresponds to the actual score. More importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead. Consequently, this new approach of valence shifter score is a good candidate for classification. We choose to integrate it for the supervised learning part.
+We get a score that 4/5 times the sentiment corresponds to the actual score. More importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead. Consequently, this new score through the valence shifters can be as a feature for the supervised learning part as it seems to provide a lot of relevant information for predicting the score of the review.
 
 ## Job positions analysis
 
