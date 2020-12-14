@@ -72,7 +72,6 @@ EDA_handler <-
       filter(get(new_col) %in% (index %>% pull(get(new_col)))) %>%
       ggplot(aes(x = get(new_col), y = `if`(TF_IDF, tf_idf, n), fill= get(new_col))) + 
       geom_col() + 
-      coord_flip() + 
       facet_grid( ~ company) + 
       theme_light() +
       theme(legend.position = "none") +

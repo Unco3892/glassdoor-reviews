@@ -72,7 +72,7 @@ tokens.cons <- tokenize_reviews(corpus.cons)
 ```
 
 
-```{r, echo=TRUE}
+```{r}
 # Keeping reviews with more than a certain number of token for pros & cons
 min.token <- 10
 
@@ -255,9 +255,9 @@ results_lsa %>%
 
 
 ## Best model (TF-IDF + LSA)
-Here we added to our best model valence shifter (sentiment function mentioned above) and the length of the reviews. We can see that despite the addition of the new element, it does not improve our RMSE (0.991) and that the results obtained previously are all better. However, we can see that our model does quit well when it has to predict twos and threes, which could be explain by the fact that there a more reviews which have been rated with a two or a three.
+Here we added to our best model valence shifter (sentiment function mentioned above) and the length of the reviews. We can see that despite the addition of the new element, it does not improve our RMSE (0.900) and that the results obtained previously are all better. However, we can see that our model does quit well when it has to predict twos and threes, which could be explain by the fact that there a more reviews which have been rated with a two or a three.
 
-```{r, echo=TRUE}
+```{r}
 lsa.pros <- textmodel_lsa(tfidf.pros, nd = bestmodel$dimPos)
 # lsa.cons <- textmodel_lsa(tfidf.cons, nd = 20)
 # Even better for the cons to be 30
@@ -321,7 +321,7 @@ imp %>%
 
 In this table we are investigating the words in `cons.3`. We can see that the 2 most important variables constituting `cons.3` are people and team, which mean quite the same.  
 
-```{r}
+```{r, fig.asp=1}
 cons.3 <- data.frame(keyName = names(
   lsa.cons$features[, 3]),
   value = lsa.cons$features[, 3],
@@ -335,22 +335,22 @@ cons.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
                                                   "Absolute value"))
 ```
 
-Now let's have a look at a pro topic. We can clearly see that `pros.3` is related to customer relationship, with words such as cutomer, commerce, deposit, account and retail. 
+Now let's have a look at a pro topic. We can clearly see that `pros.2` is related to vacations, with words such as day, year, vacation, time. It could also be related to the compensation in case of sickness (sick, pay)
 ```{r}
-pros.3 <- data.frame(keyName = names(
-  lsa.pros$features[, 3]),
-  value = lsa.pros$features[, 3],
+pros.2 <- data.frame(keyName = names(
+  lsa.pros$features[, 2]),
+  value = lsa.pros$features[, 2],
   row.names = NULL
 )
 
-pros.3 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
+pros.2 %>% mutate(abs.value = abs(value)) %>% top_n(15, abs.value) %>%
   arrange(desc(value)) %>%
-  kable_maker(caption="Topic pro 3 - Related to customer relationship",
+  kable_maker(caption="Topic pro 2 - Related to holidays",
                                       col.names=c("Key words","Value",
                                                   "Absolute value"))
 ```
 
-These results may suggest that, in general, employees are satisfied with the quality of the services provided by the company and that they are dissatisfied with internal management methods. 
+These results may suggest that, in general, employees are satisfied with their vacation  and days-off, and that they are dissatisfied with internal management methods. 
 
 ## Word Embedding & Glove
 To complete our supervised learning, we used the Word Embedding and `GloVe` embedding to model in a different way. First, we computed the RMSE for each combination of number of topic for pros and cons and then, while creating our data frame, we took the mean words instead of the sum as it worked better. 
@@ -394,7 +394,7 @@ results_glove <- expand.grid(
 ```
 
 
-```{r, results='hide',message=FALSE, echo=TRUE}
+```{r, results='hide',message=FALSE}
 # Compute the RMSE for each combination of #Topic for pros and cons
 for (i in 1:nrow(results_glove)) {
     # Giving dimensions to the embedding

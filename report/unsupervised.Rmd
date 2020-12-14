@@ -30,7 +30,7 @@ bank_reviews %<>%
 ## Preprocessing
 
 To start our analysis, we tokenized our data and removed the stopwords. To make a relevant analysis, we manually removed some words that, from our point of view, would create a bias in our analysis. Stopwords mainly include uninformative words such as quantifiers or company names which appear in every topic. The stopwords definition was an evolutive process. When we performed the unsupervised and superviseed analysis we changed our stopwords gradually. 
-```{r, echo=TRUE}
+```{r}
 tokens_to_remove <- c(
       "bank",#"ubs",#"jpmorgan",
       #"hsbc",#"td","deutsche" ,
