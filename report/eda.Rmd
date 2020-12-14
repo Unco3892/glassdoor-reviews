@@ -1,8 +1,7 @@
 <h1>
 
 # Exploratory Analysis
-A general EDA for the reviews. Note that here we treat each company as a document. Our dataset is then composed of **23,341** documents.
-ilia: reviews and not documents here
+A general EDA for the reviews. Note that here we treat each company as a document. Our dataset is then composed of **23,341** reviews.
 
 ```{r, include=FALSE}
 # Loading packages and knitr options
@@ -14,7 +13,7 @@ load(here::here("data/cleaned-reviews.RData"))
 ## Tokenization
 Text Mining results are largely impacted by the tokenization process. After testing different options, we decide to use the lemmatization as it is the most promising option. 
 
-We create the function `EDA_handler`, that deals with every aspect of the tokenization. The tokens are split by word and we also remove the stopwords. We also do not want to take into consideration the case and lowercase the tokens.
+We create the function `EDA_handler`, that deals with every aspect of the tokenization. The tokens are split by word and we also remove the stopwords. We also do not want to take into consideration the case and lowercase of the tokens.
 
 ## Wordclouds {.tabset .tabset-fade .tabset-pills}
 ```{r,message=FALSE}
@@ -164,7 +163,7 @@ cons_cloudy_aggregated <- EDA_handler(bank_reviews, employer_cons, n_top = 5, wo
 
 ### Most frequent Pro words
 
-The the below represents the most frequent words per company as the grouping was not done on the review but the company itself.
+The graph below represents the most frequent words per company as the grouping was not done on the review but on the company itself.
 
 ```{r,fig.asp=0.5}
 pros_cloudy_aggregated$Plotting_most_frequent_words
@@ -368,7 +367,7 @@ actual_score %>%
                                                   "Afinn sentiment score"))
 ```
 
-We get a score that 4/5 times the sentiment corresponds to the actual score. More importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead. Consequently, this new score through the valence shifters can be as a feature for the supervised learning part as it seems to provide a lot of relevant information for predicting the score of the review.
+We get a score that 4/5 times the sentiment corresponds to the actual score. More importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead. Consequently, this new score through the valence shifters can be used as a feature for the supervised learning part as it seems to provide a lot of relevant information for predicting the score of the review.
 
 ## Job positions analysis
 
@@ -427,9 +426,8 @@ jobs.freq %>%
 
 
 ```
-We have also explored the job positions to potentially identify patterns. After removing inaccurate job-title, we observe on the top 5 most frequent position per bank that some position seems more specific for one's bank. For instance, UBS seems to hire a larger number of interns for its operations.
+We have also explored the job positions to potentially identify patterns. After removing inaccurate job-title, we observe on the top 5 most frequent position per bank that some position seems more specific to certain banks. For instance, UBS seems to hire a larger number of interns for its operations.
 
-ilia: for one's bank or "to each bank?"
 
 ```{r fig5, out.width = "70%",fig.asp=1.1}
 
@@ -443,15 +441,15 @@ biplot(
   xlab = "Dim 2",
   ylab = "Dim 3",
   cex=0.8
-)
+)+ labs(title="Representation of the job position on the biplot")
 ```
 
 
-To have a more interpretable insight and using LSA techniques, we manage to create a biplot in 2 dimensions the top 50 job positions. Interestingly, JP Morgan, HSBC and UBS seem to have a similar job structure. On the other, TD offers more position related to representants (customer oriented), whereas DB hire more analysts.
+To have a more interpretable insight and using LSA techniques, we manage to create a biplot in 2 dimensions with the 50 top job positions. Interestingly, JP Morgan, HSBC and UBS seem to have a similar job structure. On the other, TD offers more position related to representants (customer oriented), whereas DB hire more analysts.
 
 ## Compare the reviews in terms of lexical diversity
 
-Lexical diversity can also be an interesting tool for classification. However, it seems unlikely to have a usable result here. The only explanation would be that maybe some specific banks hire many more non-native English speaker, whose linguistic abilities in exercising this langauge may be lower.
+Lexical diversity can also be an interesting tool for classification. However, it seems unlikely to have a usable result here. The only explanation would be that maybe some specific banks hire more non-native English speakers, whose linguistic abilities in exercising this langauge may be lower.
 
 ```{r fig6,fig.width=9,out.width = "90%"}
 #corpus for the pros
