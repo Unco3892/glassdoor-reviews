@@ -1,5 +1,4 @@
 # Introduction
-
 As part of a [Text Mining](https://hecnet.unil.ch/hec/syllabus/descriptif/2441) course taught at HEC Lausanne by Professor [Marc-Olivier Boldi](https://hecnet.unil.ch/hec/recherche/fiche?pnom=mboldi&dyn_lang=en),we are going to carry out the following project:Predicting company ratings through Glassdoor Reviews. </p>
 
 Glassdoor is a website where current and former company employees anonymously evaluate their salary, work environment and the company. Being the reference for obtaining information that is not made public by companies, the website has a large audience which is mainly due to the fact that the current and former employees are very active on the platform and therefore counts a lot of reviews on different companies. </p>

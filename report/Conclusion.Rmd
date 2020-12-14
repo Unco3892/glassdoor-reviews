@@ -1,0 +1,4 @@
+# Conclusion, Limits and Recommendations
+In conclusion, our exploratory analysis and unsupervised analysis allows us to state that there seem to be no big differences regarding the working environment in the banking industry. However, our exploratory analysis has allowed us to analyse the positions occupied by employees and has enabled us to identify certain recruitment strategies specific to certain banks, for example **UBS** mainly uses interns to carry out operations. In addition, thanks to supervised learning, we determined that the use of TF-IDF+LSA with 30 topics for the pros and 20 for the cons allowed us to obtain the best predictions with an RMSE of 0.900.</p>
+
+However, our model has limits. If a person writes a review and the words are not part of our token base, we will be unable to predict the review's rating. </p>

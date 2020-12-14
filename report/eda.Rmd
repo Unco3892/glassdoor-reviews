@@ -441,7 +441,7 @@ biplot(
   xlab = "Dim 2",
   ylab = "Dim 3",
   cex=0.8
-)+ labs(title="Representation of the job position on the biplot")
+)
 ```
 
 
