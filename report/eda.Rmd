@@ -16,7 +16,7 @@ Text Mining results are largely impacted by the tokenization process. After test
 
 We create the function `EDA_handler`, that deals with every aspect of the tokenization. The tokens are split by word and we also remove the stopwords. We also do not want to take into consideration the case and lowercase the tokens.
 
-## Wordclouds
+## Wordclouds {.tabset .tabset-fade .tabset-pills}
 ```{r,message=FALSE}
 # creating function to take out the pros and cons of the reviews
 EDA_handler <-
@@ -27,7 +27,7 @@ EDA_handler <-
             TF_IDF = FALSE,
             word_cloud = FALSE,
             aggregate_cloud = FALSE,
-            lemma=FALSE) {
+            lemma=TRUE) {
     # creating the new column name
     new_col <- paste0(dplyr::quo_name(rlang::enquo(text_column)), "_word")
     # tokenization of the reviews
@@ -130,54 +130,61 @@ EDA_handler <-
   }
 ```
 
-
-```{r, echo=FALSE,message=FALSE, fig.asp=1}
-#EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
-
+```{r, echo=FALSE,message=FALSE}
 # TF approach
-pros_tf <- EDA_handler(bank_reviews, employer_pros, lemma=TRUE)
-cons_tf <- EDA_handler(bank_reviews, employer_cons, lemma=TRUE)
-
+pros_tf <- EDA_handler(bank_reviews, employer_pros)
+cons_tf <- EDA_handler(bank_reviews, employer_cons)
 
 # TF_IDF approach
 pros_tf_idf <- EDA_handler(bank_reviews, employer_pros, n_top = 5,TF_grouped= TRUE, TF_IDF = TRUE)
 cons_tf_idf <- EDA_handler(bank_reviews, employer_cons, n_top = 1,TF_grouped= TRUE, TF_IDF = TRUE)
 
-# The grouped and specific to each document --> Only one word is shown which is quite strange and requires more investigation
-#pros_grouped <- EDA_handler(bank_reviews, employer_pros, n_top = 1, TF_grouped= TRUE)
+# The grouped and specific to each document
+# pros_grouped <- EDA_handler(bank_reviews, employer_pros, n_top = 1, TF_grouped= TRUE)
 
-# generating word cloud, note that you always get `null` in the output which
-# is because based on base graphics and the side effect of drawing to the current graphics device.
+# generating word cloud, note that you always get `null` in the output which is wordcloud cannot bs saved as R objects and they are based on base graphics and the side effect of drawing to the current graphics device.
 #pros_cloudy <- EDA_handler(bank_reviews, employer_pros, n_top = 1, word_cloud = TRUE)
+```
 
+### Wordcloud for Pros
+First, generate the wordcloud for the most common words found in the `employer_pros` column.
+```{r, fig.asp=0.5}
 # generating aggregated wordcloud
-pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 4, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
-
-cons_cloudy_aggregated <- EDA_handler(bank_reviews, employer_cons, n_top = 1, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
+pros_cloudy_aggregated <- EDA_handler(bank_reviews, employer_pros, n_top = 4, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE) # here we use n_top = 4 for the ggplot and it does not influence our wordcloud
 
 # note: in the rmarkdown approach you may have a warning that management could not fit on the screen, this is normal and in case it occurred a picture has to be posted of this.
 ```
 
-```{r}
+### Wordcloud for Cons
+Next, we can do the same for the `employer_cons` column.
+
+```{r, fig.asp=0.8}
+cons_cloudy_aggregated <- EDA_handler(bank_reviews, employer_cons, n_top = 5, word_cloud = T, aggregate_cloud = TRUE, lemma=TRUE)
+```
+
+### Most frequent Pro words
+
+The the below represents the most frequent words per company as the grouping was not done on the review but the company itself.
+
+```{r,fig.asp=0.5}
 pros_cloudy_aggregated$Plotting_most_frequent_words
 ```
 
+### Most frequent Cons Words
 
+```{r,fig.asp=0.5}
+cons_cloudy_aggregated$Plotting_most_frequent_words
+```
 
-The ggplot represents the most frequent words per company as the grouping was not done on the review but the company itself.
-
+## {-}
 Regarding the pros, most often the words `benefit` and `people` come up, it is also interesting to see that the words `culture`, and `life` are also there perhaps indicating that most people care about these values when trying to describe work positively.
 
 We can see that the most cons were associated with the word `management`. This is followed by `employees`, `hour` and `time`. Furthermore we have the same `people` word in the cons meaning that we would have to put our analysis into context and use the valence sifters to see if they mention something good about people or bad about these people.
 
-Also `quanteda` library could be used if needed..
-
-```{r}
-pros_corpus <- bank_reviews %>% select(company, review_id, employer_pros) %>% corpus(text_field = "employer_pros")
-```
-
 ## Semantic Analysis
-Sentiment analysis with the two dictionaries of `nrc` and `afinn`.
+First we will do a sentiment analysis with the two dictionaries of `nrc` and `afinn`. Then, we will introduce valence shifters in the subsequent part.
+
+### NRC & AFINN {.tabset .tabset-fade .tabset-pills}
 
 ```{r,message=FALSE}
 # Dictionaries for categories
@@ -296,19 +303,24 @@ scores_compared <- pos_afinn_sem$aggregated_measure %>%
   mutate(afinn_senti_score = value.x+value.y) %>% 
   arrange(desc(afinn_senti_score)) %>%
   select(-c(2,3))
+```
+<br />
 
+#### Plot of NRC dictionary
+```{r}
 a$plot_of_nrc
 ```
-
-<br />
 The feelings for the banks are very close to one another for the `nrc` method. Unfortunately, we won't be able to use nrc dictionnary for classification.
 <br />
+
+#### Plot of AFINN dictionary
 
 ```{r}
 b$plot_of_afinn
 ```
 
 <br />
+
 Using Afinn dictionnary, the sentiment analysis seems more promising. It really emphasize the importance of choosing the correct dictionary. The Afinn contains over 3,300+ words with a polarity score associated with each word. 
 <br />
 
@@ -358,12 +370,11 @@ actual_score %>%
 
 We get a score that 4/5 times the sentiment corresponds to the actual score. More importantly, it highlights the differences in the scores with Morgan Stanley drastically being in lead. Consequently, this new approach of valence shifter score is a good candidate for classification. We choose to integrate it for the supervised learning part.
 
-### Job positions analysis
+## Job positions analysis
 
 In order to have the most accurate classifier, we need to have a look at every variable available. During the scraping process, we have also managed to extract the job position. It makes sense to have a look at it to see if the employee role has an impact on the company review score.
 
 ```{r fig4, out.width = "90%"}
-
 # We select and clean variable employee_role
 clean.bank.review <-
   separate(
@@ -438,13 +449,11 @@ biplot(
 
 To have a more interpretable insight and using LSA techniques, we manage to create a biplot in 2 dimensions the top 50 job positions. Interestingly, JP Morgan, HSBC and UBS seem to have a similar job structure. On the other, TD offers more position related to representants (customer oriented), whereas DB hire more analysts.
 
-### Compare the reviews in terms of lexical diversity
+## Compare the reviews in terms of lexical diversity
 
 Lexical diversity can also be an interesting tool for classification. However, it seems unlikely to have a usable result here. The only explanation would be that maybe some specific banks hire many more non-native English speaker, whose linguistic abilities in exercising this langauge may be lower.
 
-
 ```{r fig6,fig.width=9,out.width = "90%"}
-
 #corpus for the pros
 reviews.corpus.pro <- corpus(x = bank_reviews,
                              text_field = c("employer_pros"))
@@ -496,4 +505,3 @@ ggarrange(a,b,
 ```
 
 We use both Yule's index and TTR's index to demonstrate that they are not candidate for classification. Both graphs tell very different stories, and we cannot correlate these results with the `employee_review`.
-
